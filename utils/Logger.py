@@ -3,7 +3,18 @@ from datetime import datetime
 import sys
 
 LOG_FOLDER_PATH = "../logs"
-LOG_FILENAME_FORMAT = "%Y/%m/%d,%H"
+LOG_DIRECTORY_FORMAT = "%Y/%m/%d,%H"
+LOG_FILENAME_FORMAT = "%Y%m%d_%H"
+
+
+class LOG_TYPE(object):
+    """
+    Enum class for log type string identifiers
+    """
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
 
 
 class Logger(object):
@@ -15,7 +26,6 @@ class Logger(object):
     """
     def __init__(self):
         self._logs_folder = Path(LOG_FOLDER_PATH)
-        self._logs_folder.mkdir(parents=True, exist_ok=True)
 
     def _record(self, msg: str, timestamp: datetime) -> None:
         """
@@ -33,11 +43,12 @@ class Logger(object):
         :param timestamp: datetime object
         :return: pathlib.Path object
         """
-        date, h = timestamp.strftime(LOG_FILENAME_FORMAT).split(",")
+        date, h = timestamp.strftime(LOG_DIRECTORY_FORMAT).split(",")
         path = self._logs_folder/date
         path.mkdir(parents=True, exist_ok=True)
 
-        path = path/f"{h}.log"
+        file_name = f"{timestamp.strftime(LOG_FILENAME_FORMAT)}.log"
+        path = path/file_name
         path.touch(exist_ok=True)
         return path
 
@@ -62,7 +73,7 @@ class Logger(object):
         :param record: if true, record log in file
         """
         self._log(
-            log_type="DEBUG",
+            log_type=LOG_TYPE.DEBUG,
             msg=msg,
             record=record)
 
@@ -72,7 +83,7 @@ class Logger(object):
         :param msg: log message
         """
         self._log(
-            log_type="INFO",
+            log_type=LOG_TYPE.INFO,
             msg=msg)
 
     def warn(self, msg: str):
@@ -81,7 +92,7 @@ class Logger(object):
         :param msg: log message
         """
         self._log(
-            log_type="WARNING",
+            log_type=LOG_TYPE.WARNING,
             msg=msg,
             output=sys.stderr)
 
@@ -91,7 +102,7 @@ class Logger(object):
         :param msg: log message
         """
         self._log(
-            log_type="ERROR",
+            log_type=LOG_TYPE.ERROR,
             msg=msg,
             output=sys.stderr)
 
