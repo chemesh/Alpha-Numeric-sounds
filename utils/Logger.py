@@ -3,7 +3,7 @@ from datetime import datetime
 import sys
 
 LOG_FOLDER_PATH = "../logs"
-LOG_FILENAME_FORMAT = "%Y/%m/%d,%h"
+LOG_FILENAME_FORMAT = "%Y/%m/%d,%H"
 
 
 class Logger(object):
@@ -32,7 +32,7 @@ class Logger(object):
 
     def _log(self, log_type, msg, record=True, output=sys.stdout):
         time = datetime.now()
-        log = f"{time}_{log_type}_: {msg}"
+        log = f"[{time}] __{log_type}__: {msg}"
         print(log, file=output)
         if record:
             self._record(log, time)
