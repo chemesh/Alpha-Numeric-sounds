@@ -1,12 +1,15 @@
+import os.path
+
 import librosa
 import librosa.display
+from pydub import AudioSegment
 from utils.Logger import Logger
-from utils.constants import WAV_FILE_TEST
+from utils.constants import WAV_FILE_TEST, INPUT_FOLDER
 import ruptures as rpt
 import matplotlib.pyplot as plt
 import numpy as np
-
-
+import math
+from pathlib import Path
 def fig_ax(figsize=(15, 5), dpi=150):
     """Return a (matplotlib) figure and ax objects with given size."""
     return plt.subplots(figsize=figsize, dpi=dpi)
@@ -16,10 +19,31 @@ def get_sum_of_cost(algo, n_bkps) -> float:
     bkps = algo.predict(n_bkps=n_bkps)
     return algo.cost.sum_of_costs(bkps)
 
+def optimal_bkps(bkps_costs):
+    max_pos = 1
+    max_delta = 0
+    for bkp_pos in range(1, len(bkps_costs) - 1):
+        delta1 = bkps_costs[bkp_pos - 1] - bkps_costs[bkp_pos]
+        delta2 = bkps_costs[bkp_pos] - bkps_costs[bkp_pos + 1]
+        print(f"curr pos: {bkp_pos}, delta: {delta1 - delta2}")
+        if delta1 - delta2 > max_delta:
+            max_delta = delta1 - delta2
+            max_pos = bkp_pos
+    return max_pos + 1
+
+
+
+def mp3_to_wav(mp3_path):
+    sound = AudioSegment.from_mp3(mp3_path)
+    filename = Path(mp3_path).name + ".wav"
+    sound.export(str(Path(INPUT_FOLDER)/filename), format="wav")
 
 def main():
     logger = Logger()
     data, samplerate = librosa.load(WAV_FILE_TEST)
+    # mp3_to_wav(str(Path(INPUT_FOLDER)/"In-the-hall-of-the-mountain-king.mp3"))
+    # wav_file = str(Path(INPUT_FOLDER)/"In-the-hall-of-the-mountain-king.wav")
+    # data, samplerate = librosa.load(wav_file)
     logger.info(f"data: {data}, sample rate: {samplerate}")
 
     hop_length = 512
@@ -53,12 +77,13 @@ def main():
     _ = algo.predict(n_bkps_max)
 
     array_of_n_bkps = np.arange(1, n_bkps_max + 1)
-    logger.info(f"array_of_n_bkps -  type: {type(array_of_n_bkps)},\ndata: {array_of_n_bkps}")
+    bkps_costs = [get_sum_of_cost(algo=algo, n_bkps=n_bkps) for n_bkps in array_of_n_bkps]
+    logger.info(f"bkps_costs -  type: {type(bkps_costs)},\ndata: {bkps_costs}")
 
     fig, ax = fig_ax((7, 4))
     ax.plot(
         array_of_n_bkps,
-        [get_sum_of_cost(algo=algo, n_bkps=n_bkps) for n_bkps in array_of_n_bkps],
+        bkps_costs,
         "-*",
         alpha=0.5,
     )
@@ -70,8 +95,9 @@ def main():
     fig.show()
 
     # Visually we choose n_bkps=5 (highlighted in red on the elbow plot)
-    n_bkps = 2
-    _ = ax.scatter([5], [get_sum_of_cost(algo=algo, n_bkps=5)], color="r", s=100)
+    n_bkps = optimal_bkps(bkps_costs)
+    logger.info(f"optimal number of breakpoints is: {n_bkps}")
+    _ = ax.scatter([5], [get_sum_of_cost(algo=algo, n_bkps=n_bkps)], color="r", s=100)
 
     # Segmentation
     bkps = algo.predict(n_bkps=n_bkps)
