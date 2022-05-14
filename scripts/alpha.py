@@ -1,14 +1,12 @@
-import os.path
-
 import librosa
 import librosa.display
+import soundfile
 from pydub import AudioSegment
 from utils.Logger import Logger
 from utils.constants import WAV_FILE_TEST, INPUT_FOLDER
 import ruptures as rpt
 import matplotlib.pyplot as plt
 import numpy as np
-import math
 from pathlib import Path
 def fig_ax(figsize=(15, 5), dpi=150):
     """Return a (matplotlib) figure and ax objects with given size."""
@@ -95,7 +93,8 @@ def main():
     fig.show()
 
     # Visually we choose n_bkps=5 (highlighted in red on the elbow plot)
-    n_bkps = optimal_bkps(bkps_costs)
+    # n_bkps = optimal_bkps(bkps_costs)
+    n_bkps = 5
     logger.info(f"optimal number of breakpoints is: {n_bkps}")
     _ = ax.scatter([5], [get_sum_of_cost(algo=algo, n_bkps=n_bkps)], color="r", s=100)
 
@@ -108,6 +107,11 @@ def main():
     bkps_time_indexes = (samplerate * bkps_times).astype(int).tolist()
 
     segments = [data[start:end] for (segment_number, (start, end)) in enumerate(rpt.utils.pairwise([0] + bkps_time_indexes), start=1)]
+    for segment in segments:
+        i = 0
+        soundfile.write(str(Path(INPUT_FOLDER)/f"segment+{i}"), segment, samplerate=samplerate)
+
+
 
 if __name__ == "__main__":
     main()
