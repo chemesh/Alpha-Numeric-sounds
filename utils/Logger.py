@@ -34,8 +34,8 @@ class Logger(object):
         :param timestamp:  datetime object
         """
         file = self._get_path(timestamp)
-        with file.open(mode="a") as f:
-            f.write(msg+"\n")
+        with file.open(mode="a", encoding='utf-8') as f:
+            f.write(msg+"\n",)
 
     def _get_path(self, timestamp: datetime) -> Path:
         """
