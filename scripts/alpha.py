@@ -1,6 +1,6 @@
 import librosa
 import librosa.display
-import soundfile
+import soundfile as sf
 from pydub import AudioSegment
 import matplotlib.pyplot as plt
 import numpy as np
@@ -26,8 +26,9 @@ def mp3_to_wav(mp3_path):
 
 def main():
     logger = Logger()
-    data, samplerate = librosa.load(librosa.ex('trumpet'))
-    # data, samplerate = librosa.load(WAV_FILE_TEST)
+    # data, samplerate = librosa.load(librosa.ex('trumpet'))
+    # data, samplerate = librosa.load(librosa.ex('nutcracker'))
+    data, samplerate = librosa.load(WAV_FILE_TEST)
     # mp3_to_wav(str(Path(INPUT_FOLDER)/"In-the-hall-of-the-mountain-king.mp3"))
     # wav_file = str(Path(INPUT_FOLDER)/"In-the-hall-of-the-mountain-king.wav")
     # data, samplerate = librosa.load(wav_file)
@@ -44,13 +45,80 @@ def main():
     logger.error(f"beat times: {beat_times}")
 
     # segments = partition(data, samplerate)
-    #
+
     # segment_freq = [librosa.stft(part) for part in segments]
+
     freq = librosa.stft(data)
     print(f"freq: {freq}")
     mag, phase = librosa.magphase(freq)
     print(f"mag: {mag}")
     print(f"phase: {phase}")
+
+
+    S_filter = librosa.decompose.nn_filter(mag,
+                                           aggregate=np.median,
+                                           metric='cosine',
+                                           width=int(librosa.time_to_frames(2, sr=samplerate)))
+
+    # The output of the filter shouldn't be greater than the input
+    # if we assume signals are additive.  Taking the pointwise minimum
+    # with the input spectrum forces this.
+    S_filter = np.minimum(mag, S_filter)
+
+    # We can also use a margin to reduce bleed between the vocals and instrumentation masks.
+    # Note: the margins need not be equal for foreground and background separation
+    margin_i, margin_v = 1, 10
+    power = 2
+
+    mask_i = librosa.util.softmask(S_filter,
+                                   margin_i * (mag - S_filter),
+                                   power=power)
+
+    mask_v = librosa.util.softmask(mag - S_filter,
+                                   margin_v * S_filter,
+                                   power=power)
+
+    mask_back = librosa.util.softmask(S_filter,
+                                      mag - S_filter,
+                                      power=power)
+
+    mask_lead = librosa.util.softmask(mag - S_filter,
+                                      S_filter,
+                                      power=power)
+
+    # Once we have the masks, simply multiply them with the input spectrum
+    # to separate the components
+
+    # S_foreground = mask_v * mag
+    S_background = mask_i * mag
+    S_foreground = mask_lead * mag
+    # S_background = mask_back * mag
+
+    # sphinx_gallery_thumbnail_number = 2
+
+    fig, ax = plt.subplots(nrows=3, sharex=True, sharey=True)
+    img = librosa.display.specshow(librosa.amplitude_to_db(mag, ref=np.max),
+                                   y_axis='log', x_axis='time', sr=samplerate, ax=ax[0])
+    ax[0].set(title='Full spectrum')
+    ax[0].label_outer()
+
+    librosa.display.specshow(librosa.amplitude_to_db(S_background, ref=np.max),
+                             y_axis='log', x_axis='time', sr=samplerate, ax=ax[1])
+    ax[1].set(title='Background')
+    ax[1].label_outer()
+
+    librosa.display.specshow(librosa.amplitude_to_db(S_foreground, ref=np.max),
+                             y_axis='log', x_axis='time', sr=samplerate, ax=ax[2])
+    ax[2].set(title='Foreground')
+    fig.colorbar(img, ax=ax)
+    fig.show()
+
+    foreground = librosa.istft(S_foreground * phase)
+    background = librosa.istft(S_background * phase)
+
+    sf.write(f"{INPUT_FOLDER}/foreground.wav", foreground, samplerate)
+    sf.write(f"{INPUT_FOLDER}/background.wav", background, samplerate)
+
     # notes = librosa.hz_to_note(freq)
     # logger.info(f"notes: {notes[:5][:5]}")
 
