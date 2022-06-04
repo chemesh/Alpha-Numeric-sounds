@@ -6,8 +6,8 @@ from deap import base, creator, tools
 
 from utils.DataModels import SongPool, Song
 from utils.Logger import Logger
-from utils.constants import POPULATION_SIZE, TOURNSIZE_PERCENT, CROSSOVER_PROBABILITY, MUTATION_PROBABILITY
-from utils.general_utils import is_converged
+from utils.Constants import POPULATION_SIZE, TOURNSIZE_PERCENT, CROSSOVER_PROBABILITY, MUTATION_PROBABILITY
+from utils.CommonUtils import is_converged
 
 
 class EA_Engine(object):

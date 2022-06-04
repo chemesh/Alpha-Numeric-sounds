@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from utils.Logger import Logger
-from utils.constants import WAV_FILE_TEST, INPUT_FOLDER
+from utils.Constants import WAV_FILE_TEST, INPUT_FOLDER
 from EA_Engine import EA_Engine
 from utils.DataModels import Song
 
