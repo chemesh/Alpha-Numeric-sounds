@@ -2,14 +2,14 @@ import copy
 import numpy as np
 from deap import base, creator, tools
 
-from utils.general_utils import Pool
+from utils.DataModels import SongPool
 from utils.constants import POPULATION_SIZE, TOURNSIZE_PERCENT, CROSSOVER_PROBABILITY, MUTATION_PROBABILITY
 
 
 class EA_Engine(object):
     def __init__(self):
         self.toolbox = base.Toolbox()
-        self.song_pool = Pool()
+        self.song_pool = SongPool()
 
         creator.create("Fitness_test", base.Fitness, weights=(1.0,))
         # creator.create("Individual", object, sr=int, raw_data=np.ndarray, fitness=Fitness)
