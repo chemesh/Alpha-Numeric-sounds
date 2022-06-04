@@ -7,6 +7,7 @@ from deap import base, creator, tools
 from utils.DataModels import SongPool, Song
 from utils.Logger import Logger
 from utils.constants import POPULATION_SIZE, TOURNSIZE_PERCENT, CROSSOVER_PROBABILITY, MUTATION_PROBABILITY
+from utils.general_utils import is_converged
 
 
 class EA_Engine(object):
@@ -28,8 +29,6 @@ class EA_Engine(object):
         self.toolbox.register("evaluate", self._Fitness.rate)
         self.toolbox.register("mutate", EA_Engine._mutate)
         self.toolbox.register("mate", EA_Engine._crossover)
-
-    def _get_generated_audio_data(self):
 
 
     @staticmethod
@@ -66,11 +65,11 @@ class EA_Engine(object):
         else:
             return None
 
-    def _get_fitness_values(self, population):
+    def _calculate_fitness_values(self, population):
         # calculate fitness tuple for each individual in the population:
         fitness_values = list(map(self.toolbox.evaluate, population))
-        for individual, fitnessValue in zip(population, fitness_values):
-            individual.fitness.values = fitnessValue
+        for individual, fitness_value in zip(population, fitness_values):
+            individual.fitness.values = fitness_value
 
         # extract fitness values from all individuals in population:
         return [individual.fitness.values[0] for individual in population]
@@ -90,19 +89,27 @@ class EA_Engine(object):
 
         # create initial population (generation 0):
         population = self.toolbox.populationCreator(n=POPULATION_SIZE)
-        bkps = self._get_bkps(num_of_bkps, max_gens)
         gen_counter = 0
+
+        # set which generations should  mark a break point in the mixing executions
+        bkps = self._get_bkps(num_of_bkps, max_gens)
+
+        _ = self._calculate_fitness_values(population)
 
         # initialize statistics accumulators:
         max_fitness_values = []
         mean_fitness_values = []
 
         # main evolutionary loop
-        while gen_counter < max_gens + 1:
+        while not is_converged(max_fitness_values) and gen_counter < max_gens:
 
-            fitness_values = self._get_fitness_values(population)
+            gen_counter += 1
+            self.logger.info(f"---------- Start running generation {gen_counter} ----------")
 
-            offspring = list(map(self.toolbox.clone, population))
+            # apply the selection operator, to select the next generation's individuals:
+            offspring = self.toolbox.select(population, len(population))
+            # clone the selected individuals:
+            offspring = list(map(self.toolbox.clone, offspring))
 
             # apply the crossover operator to pairs of offspring:
             for child1, child2 in zip(offspring[::2], offspring[1::2]):
@@ -120,7 +127,7 @@ class EA_Engine(object):
             population[:] = offspring
 
             # collect fitnessValues into a list, update statistics and print:
-            fitness_values = [ind.fitness.values[0] for ind in population]
+            fitness_values = self._calculate_fitness_values(population)
 
             max_fitness = max(fitness_values)
             mean_fitness = sum(fitness_values) / len(population)
@@ -132,4 +139,6 @@ class EA_Engine(object):
             best_index = fitness_values.index(max(fitness_values))
             self.logger.info(f"Best Individual = {population[best_index]}")
 
-            gen_counter += 1
+        # return the top best individuals created
+        return sorted(population, key=lambda ind: max(ind.fitness.values), reverse=True)[:3]
+
