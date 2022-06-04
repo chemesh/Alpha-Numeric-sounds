@@ -16,7 +16,7 @@ def main():
 
     # data, samplerate = librosa.load(librosa.ex('trumpet'))
     # data, samplerate = librosa.load(librosa.ex('nutcracker'))
-    song1 = Song(librosa.load(WAV_FILE_TEST))
+    song1 = Song(WAV_FILE_TEST)
     # mp3_to_wav(str(Path(INPUT_FOLDER)/"In-the-hall-of-the-mountain-king.mp3"))
     # wav_file = str(Path(INPUT_FOLDER)/"In-the-hall-of-the-mountain-king.wav")
     # data, samplerate = librosa.load(wav_file)
