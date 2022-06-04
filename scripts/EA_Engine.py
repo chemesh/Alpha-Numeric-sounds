@@ -92,6 +92,7 @@ class EA_Engine(object):
         gen_counter = 0
 
         # set which generations should  mark a break point in the mixing executions
+        # todo: implement logic for returning on breakpoints
         bkps = self._get_bkps(num_of_bkps, max_gens)
 
         _ = self._calculate_fitness_values(population)

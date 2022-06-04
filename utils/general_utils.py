@@ -9,4 +9,5 @@ def fig_ax(figsize=(15, 5), dpi=150):
 
 
 def is_converged(series):
+    # todo: implement logic to calc if series has converged
     pass
