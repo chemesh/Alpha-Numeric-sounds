@@ -5,27 +5,17 @@ from pydub import AudioSegment
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
-import deap
 
 from utils.Logger import Logger
 from utils.constants import WAV_FILE_TEST, INPUT_FOLDER
 from utils.sound_utils import partition
+from EA_Engine import EA_Engine
 
-
-def fig_ax(figsize=(15, 5), dpi=150):
-    """Return a (matplotlib) figure and ax objects with given size."""
-    return plt.subplots(figsize=figsize, dpi=dpi)
-
-
-
-
-def mp3_to_wav(mp3_path):
-    sound = AudioSegment.from_mp3(mp3_path)
-    filename = Path(mp3_path).name + ".wav"
-    sound.export(str(Path(INPUT_FOLDER)/filename), format="wav")
 
 def main():
     logger = Logger()
+    engine = EA_Engine()
+
     # data, samplerate = librosa.load(librosa.ex('trumpet'))
     # data, samplerate = librosa.load(librosa.ex('nutcracker'))
     data, samplerate = librosa.load(WAV_FILE_TEST)
@@ -53,7 +43,6 @@ def main():
     mag, phase = librosa.magphase(freq)
     print(f"mag: {mag}")
     print(f"phase: {phase}")
-
 
     S_filter = librosa.decompose.nn_filter(mag,
                                            aggregate=np.median,
@@ -89,12 +78,8 @@ def main():
     # Once we have the masks, simply multiply them with the input spectrum
     # to separate the components
 
-    # S_foreground = mask_v * mag
-    S_background = mask_i * mag
-    S_foreground = mask_lead * mag
-    # S_background = mask_back * mag
-
-    # sphinx_gallery_thumbnail_number = 2
+    S_foreground = mask_v * mag
+    S_background = mask_back * mag
 
     fig, ax = plt.subplots(nrows=3, sharex=True, sharey=True)
     img = librosa.display.specshow(librosa.amplitude_to_db(mag, ref=np.max),
@@ -121,10 +106,6 @@ def main():
 
     # notes = librosa.hz_to_note(freq)
     # logger.info(f"notes: {notes[:5][:5]}")
-
-
-
-
 
 
 
