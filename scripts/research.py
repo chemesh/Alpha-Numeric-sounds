@@ -4,11 +4,14 @@ import soundfile as sf
 import matplotlib.pyplot as plt
 import numpy as np
 from spleeter.separator import Separator
+from pydub import AudioSegment
+
 
 from utils.Logger import Logger
 from utils.Constants import WAV_FILE_TEST, INPUT_FOLDER
 from EA_Engine import EA_Engine
 from utils.DataModels import Song
+import utils.SoundUtils as su
 
 
 def main():
@@ -19,27 +22,37 @@ def main():
     # data, samplerate = librosa.load(librosa.ex('trumpet'))
     # data, samplerate = librosa.load(librosa.ex('nutcracker'))
     # song1 = Song(WAV_FILE_TEST)
-    song1 = Song(WAV_FILE_TEST, duration=60.0)
+    # song1 = Song(WAV_FILE_TEST, duration=60.0)
     song2 = Song(librosa.ex('nutcracker'))
+    song3 = Song(librosa.ex('trumpet'))
     # mp3_to_wav(str(Path(INPUT_FOLDER)/"In-the-hall-of-the-mountain-king.mp3"))
     # wav_file = str(Path(INPUT_FOLDER)/"In-the-hall-of-the-mountain-king.wav")
     # data, samplerate = librosa.load(wav_file)
+    song2 = su.ndarr_to_as(song2.data)
+    song3 = su.ndarr_to_as(song3.data)
+
+    combined = song2.overlay(song3)
+
+    combined.export(f"{INPUT_FOLDER}/song3.wav", format='wav')
 
     # results = engine.mix(song1, song2)
 
     from spleeter.audio.adapter import AudioAdapter
 
-    audio_loader = AudioAdapter.default()
-    waveform, sr = audio_loader.load(WAV_FILE_TEST, sample_rate=22050)
+    # audio_loader = AudioAdapter.default()
+    # waveform, sr = audio_loader.load(WAV_FILE_TEST, sample_rate=22050)
 
     # logger.info(f"data: {song1.data}, sample rate: {song1.sr}")
-    logger.info(f"type: {waveform.dtype}")
-    logger.info(f"size: {len(waveform)*64}")
+    # logger.info(f"type: {waveform.dtype}")
+    # logger.info(f"size: {len(waveform)}")
 
-    song1_parts = sep.separate(waveform)
-    for inst, data in song1_parts.items():
-        logger.info(f"instrument: {inst}, data:{data}")
-        sf.write(f"{INPUT_FOLDER}/{inst}.wav", data, int(sr))
+    # song3.combine(song2)
+    # sf.write(f"{INPUT_FOLDER}/song3.wav", song3.data, song3.sr)
+
+    # song3_parts = sep.separate(song1.data.reshape(song1.data.shape[0],1))
+    # for inst, data in song1_parts.items():
+    #     logger.info(f"instrument: {inst}, data:{data}")
+    #     sf.write(f"{INPUT_FOLDER}/{inst}.wav", data, song1.sr)
 
     # hop_length = 512
     # h_data, p_data = librosa.effects.hpss(song1.data)

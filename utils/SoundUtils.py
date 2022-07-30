@@ -1,7 +1,28 @@
+from typing import List
+
 import librosa
 import librosa.display
 import ruptures as rpt
+from pydub import AudioSegment
 import numpy as np
+import io
+import scipy.io.wavfile
+
+
+def as_to_ndarr(sound: AudioSegment) -> np.ndarray:
+    channel_sounds = sound.set_frame_rate(16000).split_to_mono()
+    samples = [s.get_array_of_samples() for s in channel_sounds]
+    fp_arr = np.array(samples).T.astype(np.float32)
+    fp_arr /= np.iinfo(samples[0].typecode).max
+    return fp_arr
+
+
+def ndarr_to_as(arr: np.ndarray) -> AudioSegment:
+    wav_io = io.BytesIO()
+    scipy.io.wavfile.write(wav_io, 16000, arr)
+    wav_io.seek(0)
+    seg = AudioSegment.from_wav(wav_io)
+    return seg
 
 
 def get_sum_of_cost(algo, n_bkps) -> float:
@@ -9,7 +30,8 @@ def get_sum_of_cost(algo, n_bkps) -> float:
     bkps = algo.predict(n_bkps=n_bkps)
     return algo.cost.sum_of_costs(bkps)
 
-def optimal_bkps(bkps_costs):
+
+def optimal_bkps(bkps_costs: List) -> int:
     max_pos = 1
     max_delta = 0
     for bkp_pos in range(1, len(bkps_costs) - 1):
@@ -22,7 +44,7 @@ def optimal_bkps(bkps_costs):
     return max_pos + 1
 
 
-def partition(data, samplerate, logger):
+def partition(data: np.ndarray, samplerate: int, logger) -> List:
     # Compute the onset strength
     hop_length_tempo = 256
     oenv = librosa.onset.onset_strength(

@@ -2,9 +2,13 @@ from typing import overload, Iterable
 
 import librosa
 import numpy as np
+from pydub import AudioSegment
 
 
 class Song(object):
+    data: np.ndarray
+    sr: int
+
     def __init__(self, path: str, sr: int = 22050, duration: float = None):
         self.data, self.sr = librosa.load(path, sr=sr, duration=duration)
         self._tempo, self._beat_frames = librosa.beat.beat_track(y=self.data, sr=self.sr)
