@@ -1,31 +1,44 @@
-from typing import List
+from typing import List, Tuple
 
 import librosa
 import librosa.display
 import ruptures as rpt
-from pydub import AudioSegment
 import numpy as np
-import io
-import scipy.io.wavfile
 
 
-def as_to_ndarr(sound: AudioSegment) -> np.ndarray:
-    channel_sounds = sound.set_frame_rate(16000).split_to_mono()
-    samples = [s.get_array_of_samples() for s in channel_sounds]
-    fp_arr = np.array(samples).T.astype(np.float32)
-    fp_arr /= np.iinfo(samples[0].typecode).max
-    return fp_arr
+def combine(data1: np.ndarray, sr1: int, data2: np.ndarray, sr2: int) -> Tuple[np.ndarray, int]:
+    if data1.shape[0] > data2.shape[0]:
+        data2 = np.pad(data2, (0, data1.shape[0]-data2.shape[0]), "constant")
+    elif data1.shape[0] < data2.shape[0]:
+        data1 = np.pad(data1, (0, data2.shape[0] - data1.shape[0]), "constant")
+
+    return (data1 + data2) / 2, int((sr1 + sr2) / 2)
 
 
-def ndarr_to_as(arr: np.ndarray) -> AudioSegment:
-    wav_io = io.BytesIO()
-    scipy.io.wavfile.write(wav_io, 16000, arr)
-    wav_io.seek(0)
-    seg = AudioSegment.from_wav(wav_io)
-    return seg
+def swap(
+        data1: np.ndarray,
+        sr1: int,
+        data2: np.ndarray,
+        sr2: int,
+        d1_start_ms: int,
+        d1_end_ms: int,
+        d2_start_ms: int,
+        d2_end_ms: int
+) -> Tuple[np.ndarray, np.ndarray]:
+
+    d1_start_idx = sr1 * d1_start_ms // 1000
+    d1_end_idx = sr1 * d1_end_ms // 1000
+    d2_start_idx = sr2 * d2_start_ms // 1000
+    d2_end_idx = sr2 * d2_end_ms // 1000
+
+    part1 = data1[d1_start_idx:d1_end_idx]
+    part2 = data2[d2_start_idx:d2_end_idx]
+    new_data1 = np.insert(np.delete(data1, slice(d1_start_idx, d1_end_idx)), d1_start_idx, part2)
+    new_data2 = np.insert(np.delete(data2, slice(d2_start_idx, d2_end_idx)), d2_start_idx, part1)
+    return new_data1, new_data2
 
 
-def get_sum_of_cost(algo, n_bkps) -> float:
+def get_sum_of_cost(algo: rpt.KernelCPD, n_bkps: int) -> float:
     """Return the sum of costs for the change points `bkps`"""
     bkps = algo.predict(n_bkps=n_bkps)
     return algo.cost.sum_of_costs(bkps)

@@ -12,28 +12,34 @@ from utils.Constants import WAV_FILE_TEST, INPUT_FOLDER
 from EA_Engine import EA_Engine
 from utils.DataModels import Song
 import utils.SoundUtils as su
+import utils.Constants as const
 
 
 def main():
-    logger = Logger()
+    # logger = Logger()
     # engine = EA_Engine()
-    sep = Separator("spleeter:5stems")
+    # sep = Separator("spleeter:5stems")
 
     # data, samplerate = librosa.load(librosa.ex('trumpet'))
     # data, samplerate = librosa.load(librosa.ex('nutcracker'))
-    # song1 = Song(WAV_FILE_TEST)
+    song1 = Song(WAV_FILE_TEST)
     # song1 = Song(WAV_FILE_TEST, duration=60.0)
     song2 = Song(librosa.ex('nutcracker'))
-    song3 = Song(librosa.ex('trumpet'))
+    # song3 = Song(librosa.ex('trumpet'))
     # mp3_to_wav(str(Path(INPUT_FOLDER)/"In-the-hall-of-the-mountain-king.mp3"))
     # wav_file = str(Path(INPUT_FOLDER)/"In-the-hall-of-the-mountain-king.wav")
     # data, samplerate = librosa.load(wav_file)
-    song2 = su.ndarr_to_as(song2.data)
-    song3 = su.ndarr_to_as(song3.data)
+    # song2 = su.ndarr_to_as(song2.data)
+    # song3 = su.ndarr_to_as(song3.data)
 
-    combined = song2.overlay(song3)
+    # combined_data,  sr = su.combine(song2.data, song2.sr, song3.data, song3.sr)
 
-    combined.export(f"{INPUT_FOLDER}/song3.wav", format='wav')
+    sw1, sw2 = su.swap(song1.data, song1.sr, song2.data, song2.sr, 5, 10, 6.5, 9)
+
+    # sf.write(f"{INPUT_FOLDER}/combined.wav", combined_data, sr)
+    sf.write(f"{INPUT_FOLDER}/sw1.wav", sw1, song1.sr)
+    sf.write(f"{INPUT_FOLDER}/sw2.wav", sw2, song2.sr)
+
 
     # results = engine.mix(song1, song2)
 
