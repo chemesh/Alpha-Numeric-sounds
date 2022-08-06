@@ -22,7 +22,7 @@ class EA_Engine(object):
 
     def _register(self, population_size, tournsize_percent):
         # todo: need to find alternative to register once and change popsiz and tournsize values if needed
-        self.toolbox.register("_get_audio_data", self.song_pool.pop())
+        self.toolbox.register("get_audio_data", lambda: self.song_pool.pop())
         self.toolbox.register("individual_creator", tools.initRepeat, creator.Individual, self.toolbox.get_audio_data, n=1)
         self.toolbox.register("population_creator", tools.initRepeat, list, self.toolbox.individual_creator)
         self.toolbox.register("select", tools.selTournament, tournsize=population_size * tournsize_percent)
@@ -88,7 +88,7 @@ class EA_Engine(object):
         self.song_pool.add(songs)
 
         # create initial population (generation 0):
-        population = self.toolbox.populationCreator(n=POPULATION_SIZE)
+        population = self.toolbox.population_creator(n=POPULATION_SIZE)
         gen_counter = 0
 
         # set which generations should  mark a break point in the mixing executions

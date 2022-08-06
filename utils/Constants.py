@@ -14,6 +14,8 @@ MUTATION_PROBABILITY = 0.1
 CROSSOVER_PROBABILITY = 0.4
 
 ############## TIME ##############
-
 MS_IN_SECOND = 1000
+
+############## ALGO ##############
+MAX_BKPS = 10
 
