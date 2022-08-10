@@ -20,13 +20,14 @@ import utils.Constants as const
 def main():
     # logger = Logger()
     # engine = EA_Engine()
-    # sep = Separator("spleeter:5stems")
+    sep = Separator("spleeter:4stems")
 
     # data, samplerate = librosa.load(librosa.ex('trumpet'))
     # data, samplerate = librosa.load(librosa.ex('nutcracker'))
     # song1 = Song(WAV_FILE_TEST)
     y1, sr1 = librosa.load(os.path.join(INPUT_FOLDER, "bohemian_raphsody.wav"), duration=30)
     y2, sr2 = librosa.load(os.path.join(INPUT_FOLDER, "im_rak_tedabri.wav"), duration=30)
+
     # song1 = Song(WAV_FILE_TEST)
     # song1 = Song(WAV_FILE_TEST, duration=60.0)
     # song2 = Song(librosa.ex('nutcracker'))
@@ -45,7 +46,7 @@ def main():
     # sf.write(f"{INPUT_FOLDER}/sw1.wav", sw1, song1.sr)
     # sf.write(f"{INPUT_FOLDER}/sw2.wav", sw2, song2.sr)
 
-    sf.write(f"{INPUT_FOLDER}/rnd.wav", su.rand_reconstruct(y1, sr1, y2, sr2), sr1)
+    # sf.write(f"{INPUT_FOLDER}/rnd.wav", su.rand_reconstruct(y1, sr1, y2, sr2), sr1)
 
 
     # results = engine.mix(song1, song2)

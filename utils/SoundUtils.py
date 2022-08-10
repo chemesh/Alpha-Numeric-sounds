@@ -9,7 +9,6 @@ from typing import List, Tuple, Dict, Any
 
 from utils.Constants import MAX_BKPS
 
-
 class INSTRUMENT(enum.Enum):
     BASS = "bass"
     DRUMS = "drums"
@@ -22,7 +21,14 @@ class INSTRUMENT(enum.Enum):
         return list(map(lambda c: c.value, cls))
 
 
-def rand_reconstruct(data1: np.ndarray, sr1: int, data2: np.ndarray, sr2: int, hop_length: int = 256) -> Any:
+def rand_reconstruct(
+        data1: np.ndarray,
+        sr1: int,
+        data2: np.ndarray,
+        sr2: int,
+        inst: INSTRUMENT = None,
+        hop_length: int = 256
+) -> Any:
     bkps1 = np.pad(
         array=partition(data1, sr1, MAX_BKPS, hop_length=hop_length, in_ms=True),
         pad_width=(1, 0),
@@ -39,6 +45,7 @@ def rand_reconstruct(data1: np.ndarray, sr1: int, data2: np.ndarray, sr2: int, h
     idx2 = random.randrange(len(bkps2)-1)
 
     # randomize which function to use between "swap" and "overlay"
+    no_change = random.choice([True, False])
     if random.choice(["swap", "overlay"]) == "swap":
         new_data, _ = swap(
             data1=data1,
@@ -48,7 +55,18 @@ def rand_reconstruct(data1: np.ndarray, sr1: int, data2: np.ndarray, sr2: int, h
             d1_start_ms=bkps1[idx1],
             d1_end_ms=bkps1[idx1 + 1],
             d2_start_ms=bkps2[idx2],
-            d2_end_ms=bkps2[idx2 + 1]
+            d2_end_ms=bkps2[idx2 + 1],
+            inst=inst
+        ) if no_change else swap(
+            data1=data2,
+            sr1=sr2,
+            data2=data1,
+            sr2=sr1,
+            d1_start_ms=bkps2[idx2],
+            d1_end_ms=bkps2[idx2 + 1],
+            d2_start_ms=bkps1[idx1],
+            d2_end_ms=bkps1[idx1 + 1],
+            inst=inst
         )
     else:
         new_data, _ = overlay(
@@ -56,7 +74,15 @@ def rand_reconstruct(data1: np.ndarray, sr1: int, data2: np.ndarray, sr2: int, h
             sr1=sr1,
             data2=data2[ms_to_frame(bkps2[idx2], sr2):ms_to_frame(bkps2[idx2+1], sr2)],
             sr2=sr2,
-            start_ms=bkps1[idx1]
+            start_ms=bkps1[idx1],
+            inst=inst
+        ) if no_change else overlay(
+            data1=data2,
+            sr1=sr2,
+            data2=data1[ms_to_frame(bkps1[idx1], sr1):ms_to_frame(bkps1[idx1+1], sr1)],
+            sr2=sr1,
+            start_ms=bkps2[idx2],
+            inst=inst
         )
     return new_data
 
@@ -68,7 +94,7 @@ def extract_voice(data: np.ndarray, sr: int, inst: INSTRUMENT) -> Tuple[np.ndarr
     and second value is the original data without the extracted voice
     """
     voices = separate_voices(data)
-    voice_to_extract = voices.pop(inst.value)
+    voice_to_extract = voices.pop(inst)
 
     new_data = voices.popitem()[1]
     while voices:
@@ -81,19 +107,36 @@ def ms_to_frame(ts: int, sr: int):
     return sr * ts // 1000
 
 
-def overlay(data1: np.ndarray, sr1: int, data2: np.ndarray, sr2: int, start_ms: int = 0) -> Tuple[np.ndarray, int]:
+def overlay(
+        data1: np.ndarray,
+        sr1: int,
+        data2: np.ndarray,
+        sr2: int,
+        start_ms: int = 0,
+        inst: INSTRUMENT = None
+) -> Tuple[np.ndarray, int]:
     sub = np.array_split(data1, [ms_to_frame(start_ms, sr1)])
-    combined, sr = combine(sub[1], sr1, data2, sr2)
+    combined, sr = combine(sub[1], sr1, data2, sr2, inst)
     return np.append(sub[0], combined), sr
 
 
-def combine(data1: np.ndarray, sr1: int, data2: np.ndarray, sr2: int) -> Tuple[np.ndarray, int]:
+def combine(
+        data1: np.ndarray,
+        sr1: int,
+        data2: np.ndarray,
+        sr2: int,
+        inst: INSTRUMENT = None
+) -> Tuple[np.ndarray, int]:
+
+    if inst:
+        data2, _ = extract_voice(data2, sr2, inst)
+
     if data1.shape[0] > data2.shape[0]:
         data2 = np.pad(data2, (0, data1.shape[0]-data2.shape[0]), "constant")
     elif data1.shape[0] < data2.shape[0]:
         data1 = np.pad(data1, (0, data2.shape[0] - data1.shape[0]), "constant")
 
-    return (data1 + data2) / 2, int((sr1 + sr2) / 2)
+    return (data1 + data2) / 2, (sr1 + sr2) // 2
 
 
 def swap(
@@ -104,7 +147,8 @@ def swap(
         d1_start_ms: int,
         d1_end_ms: int,
         d2_start_ms: int,
-        d2_end_ms: int
+        d2_end_ms: int,
+        inst: INSTRUMENT = None
 ) -> Tuple[np.ndarray, np.ndarray]:
 
     d1_start_idx = ms_to_frame(d1_start_ms, sr1)
@@ -114,6 +158,13 @@ def swap(
 
     part1 = data1[d1_start_idx:d1_end_idx]
     part2 = data2[d2_start_idx:d2_end_idx]
+
+    if inst:
+        inst1, back1 = extract_voice(data1, sr1, inst)
+        inst2, back2 = extract_voice(data2, sr2, inst)
+        part1 = combine(inst1, sr1, back2, sr2)
+        part2 = combine(inst2, sr2, back1, sr1)
+
     new_data1 = np.insert(np.delete(data1, slice(d1_start_idx, d1_end_idx)), d1_start_idx, part2)
     new_data2 = np.insert(np.delete(data2, slice(d2_start_idx, d2_end_idx)), d2_start_idx, part1)
     return new_data1, new_data2
@@ -131,7 +182,7 @@ def optimal_bkps(bkps_costs: List) -> int:
     for bkp_pos in range(1, len(bkps_costs) - 1):
         delta1 = bkps_costs[bkp_pos - 1] - bkps_costs[bkp_pos]
         delta2 = bkps_costs[bkp_pos] - bkps_costs[bkp_pos + 1]
-        print(f"curr pos: {bkp_pos}, delta: {delta1 - delta2}")
+        # print(f"curr pos: {bkp_pos}, delta: {delta1 - delta2}")
         if delta1 - delta2 > max_delta:
             max_delta = delta1 - delta2
             max_pos = bkp_pos
