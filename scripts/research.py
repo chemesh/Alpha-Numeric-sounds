@@ -3,15 +3,13 @@ import os
 import librosa
 import librosa.display
 import soundfile as sf
-import matplotlib.pyplot as plt
 import numpy as np
 from spleeter.separator import Separator
-from pydub import AudioSegment
 
 
 from utils.Logger import Logger
 from utils.Constants import WAV_FILE_TEST, INPUT_FOLDER
-from EA_Engine import EA_Engine
+# from EA_Engine import EA_Engine
 from utils.DataModels import Song
 import utils.SoundUtils as su
 import utils.Constants as const
@@ -20,13 +18,23 @@ import utils.Constants as const
 def main():
     # logger = Logger()
     # engine = EA_Engine()
-    sep = Separator("spleeter:4stems")
+    sep = Separator("spleeter:5stems")
 
     # data, samplerate = librosa.load(librosa.ex('trumpet'))
     # data, samplerate = librosa.load(librosa.ex('nutcracker'))
     # song1 = Song(WAV_FILE_TEST)
-    y1, sr1 = librosa.load(os.path.join(INPUT_FOLDER, "bohemian_raphsody.wav"), duration=30)
+    # y1, sr1 = librosa.load(os.path.join(INPUT_FOLDER, "bohemian_raphsody.wav"), offset=30., duration=30)
+    y1, sr1 = librosa.load(WAV_FILE_TEST, duration=30)
     y2, sr2 = librosa.load(os.path.join(INPUT_FOLDER, "im_rak_tedabri.wav"), duration=30)
+
+    clean_y = su.get_clean_freq(y1)
+    sf.write(f"{INPUT_FOLDER}/cleean.wav", y1, sr1)
+
+
+
+
+
+
 
     # song1 = Song(WAV_FILE_TEST)
     # song1 = Song(WAV_FILE_TEST, duration=60.0)
@@ -51,7 +59,7 @@ def main():
 
     # results = engine.mix(song1, song2)
 
-    from spleeter.audio.adapter import AudioAdapter
+    # from spleeter.audio.adapter import AudioAdapter
 
     # audio_loader = AudioAdapter.default()
     # waveform, sr = audio_loader.load(WAV_FILE_TEST, sample_rate=22050)
@@ -150,7 +158,6 @@ def main():
     #
     # # notes = librosa.hz_to_note(freq)
     # # logger.info(f"notes: {notes[:5][:5]}")
-    #
 
 
 if __name__ == "__main__":

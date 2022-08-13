@@ -190,7 +190,15 @@ def optimal_bkps(bkps_costs: List) -> int:
 
 
 def separate_voices(data: np.ndarray):
-    return Separator("spleeter:5stems").separate(data.reshape(data.shape[0], 1))
+    return {n: v.to_mono() for n, v in Separator("spleeter:5stems").separate(data.reshape(data.shape[0], 1)).items()}
+
+
+def get_clean_freq(data: np.ndarray):
+    n = data.shape[-1]
+    f = np.fft.fft(data, n)
+    psd = f * np.conj(f) / n
+    ind = psd > np.average(psd)
+    return np.fft.ifft(ind * f)
 
 
 def partition(data: np.ndarray, samplerate: int, n_bkps_max: int, hop_length: int = 256, in_ms: bool = False) -> List:
