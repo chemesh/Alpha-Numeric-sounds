@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import Raters.raters as rating
 from spleeter.separator import Separator
-from pydub import AudioSegment
 
 
 from utils.Logger import Logger
@@ -29,6 +28,19 @@ def main():
     y1, sr1 = librosa.load(os.path.join(INPUT_FOLDER, "bohemian_raphsody.wav"), duration=30)
     y2, sr2 = librosa.load(os.path.join(INPUT_FOLDER, "im_rak_tedabri.wav"), duration=30)
     y3, sr3 = librosa.load(os.path.join(INPUT_FOLDER, "Symphony No.6 (1st movement).wav"), duration=30)
+    # y1, sr1 = librosa.load(os.path.join(INPUT_FOLDER, "bohemian_raphsody.wav"), offset=30., duration=30)
+    y1, sr1 = librosa.load(WAV_FILE_TEST, duration=30)
+    # y2, sr2 = librosa.load(os.path.join(INPUT_FOLDER, "im_rak_tedabri.wav"), duration=30)
+
+    clean_y = su.get_clean_freq(y1)
+    sf.write(f"{INPUT_FOLDER}/cleean.wav", y1, sr1)
+
+
+
+
+
+
+
     # song1 = Song(WAV_FILE_TEST)
     # song1 = Song(WAV_FILE_TEST, duration=60.0)
     # song2 = Song(librosa.ex('nutcracker'))
@@ -84,7 +96,7 @@ def main():
     # # segment_freq = [librosa.stft(part) for part in segments]
     #
     #freq = librosa.stft(np.trim_zeros(y1))
-    filtered_freq = librosa.feature.spectral_rolloff(np.trim_zeros(y3), sr3)
+    filtered_freq = su.get
     # print(f'type of filtered_freq: {type(filtered_freq)}')
     print(f'filtered_freq value= {filtered_freq}')
     notes = librosa.hz_to_note(filtered_freq)
