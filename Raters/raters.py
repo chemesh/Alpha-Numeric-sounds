@@ -1,16 +1,10 @@
-import librosa
-import librosa.display
-import soundfile as sf
-import matplotlib.pyplot as plt
+
 import numpy as np
-from spleeter.separator import Separator
-from pydub import AudioSegment
 import mingus.core.notes
 from mingus.containers import Note
 
 from utils.Logger import Logger
 from utils.Constants import WAV_FILE_TEST, INPUT_FOLDER
-from scripts.EA_Engine import EA_Engine
 from utils.DataModels import Song
 import utils.SoundUtils as su
 

@@ -139,8 +139,21 @@ def optimal_bkps(bkps_costs: List) -> int:
     return max_pos + 1
 
 
+def clean_wave(data: np.ndarray, power_filter: float = None) -> np.ndarray:
+    n = data.shape[-1]
+    f = np.fft.fft(data, n)
+    psd = f * np.conj(f) / n
+    if not power_filter:
+        power_filter = np.max(psd)
+
+    mask = psd > power_filter
+    return np.fft.ifft(f * mask)
+
+
 def separate_voices(data: np.ndarray):
-    return Separator("spleeter:5stems").separate(data.reshape(data.shape[0], 1))
+    # return {k: librosa.to_mono(v) for k, v in Separator("spleeter:5stems").separate(data.reshape(data.shape[0], 1)).items()}
+    voices = Separator("spleeter:5stems").separate(librosa.data.reshape(1, data.shape[0]))
+    return {k: librosa.to_mono(v) for k, v in voices.items()}
 
 
 def partition(data: np.ndarray, samplerate: int, n_bkps_max: int, hop_length: int = 256, in_ms: bool = False) -> List:

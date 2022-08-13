@@ -2,7 +2,6 @@ from typing import overload, Iterable
 
 import librosa
 import numpy as np
-from pydub import AudioSegment
 
 
 class Song(object):
