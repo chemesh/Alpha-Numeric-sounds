@@ -21,6 +21,18 @@ class INSTRUMENT(enum.Enum):
         return list(map(lambda c: c.value, cls))
 
 
+def denoise(y: np.ndarray, min_db_ratio: float) -> np.ndarray:
+    """
+    :param y: time-series data
+    :param min_db_ratio: positive float (0-1). 0 will not filter out anything, while 1 will return an array of 0's
+    :return: noise-filtered time-series data
+    """
+    stft = librosa.stft(y)
+    stft_db = librosa.amplitude_to_db(np.abs(stft), ref=np.max)
+    mask = stft_db > (min_db_ratio * np.min(stft_db))
+    return librosa.istft(stft * mask)
+
+
 def rand_reconstruct(
         data1: np.ndarray,
         sr1: int,
