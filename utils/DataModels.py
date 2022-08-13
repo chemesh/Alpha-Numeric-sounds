@@ -37,13 +37,13 @@ class SongPool(object):
         self._pool = []
         self._pop_counter = 0
 
-    @overload
+    #@overload
     def add(self, obj: Song):
         if obj not in self._pool:
             self._pool.append(obj)
 
-    @overload
-    def add(self, collection: Iterable[Song]):
+    #@overload
+    def add_s(self, collection: Iterable[Song]):
         for obj in collection:
             self.add(obj)
 

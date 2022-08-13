@@ -84,8 +84,8 @@ class EA_Engine(object):
             mutation_prob=MUTATION_PROBABILITY,
             crossover_prob=CROSSOVER_PROBABILITY):
 
+        self.song_pool.add_s(songs)
         self._register(popsize, tournsize_p)
-        self.song_pool.add(songs)
 
         # create initial population (generation 0):
         population = self.toolbox.population_creator(n=POPULATION_SIZE)

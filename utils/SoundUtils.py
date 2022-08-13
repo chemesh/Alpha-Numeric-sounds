@@ -6,6 +6,7 @@ import librosa.display
 import ruptures as rpt
 from spleeter.separator import Separator
 from typing import List, Tuple, Dict, Any
+import re
 
 from utils.Constants import MAX_BKPS
 
@@ -180,3 +181,9 @@ def partition(data: np.ndarray, samplerate: int, n_bkps_max: int, hop_length: in
     # segments = [data[start:end] for (segment_number, (start, end)) in
     #             enumerate(rpt.utils.pairwise([0] + bkps_time_indexes), start=1)]
     # return segments
+
+def to_mingus_form(note):
+    '''
+    converts xi to x-i. for example: A8 -> A-8, B#4 -> B#-4
+    '''
+    return re.sub(r'([^0-9])([0-9])', r'\1-\2', re.sub(r'([^A-Z0-9])', '#', note))

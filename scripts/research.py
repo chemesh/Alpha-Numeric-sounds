@@ -5,6 +5,7 @@ import librosa.display
 import soundfile as sf
 import matplotlib.pyplot as plt
 import numpy as np
+import Raters.raters as rating
 from spleeter.separator import Separator
 from pydub import AudioSegment
 
@@ -27,6 +28,7 @@ def main():
     # song1 = Song(WAV_FILE_TEST)
     y1, sr1 = librosa.load(os.path.join(INPUT_FOLDER, "bohemian_raphsody.wav"), duration=30)
     y2, sr2 = librosa.load(os.path.join(INPUT_FOLDER, "im_rak_tedabri.wav"), duration=30)
+    y3, sr3 = librosa.load(os.path.join(INPUT_FOLDER, "Symphony No.6 (1st movement).wav"), duration=30)
     # song1 = Song(WAV_FILE_TEST)
     # song1 = Song(WAV_FILE_TEST, duration=60.0)
     # song2 = Song(librosa.ex('nutcracker'))
@@ -71,19 +73,25 @@ def main():
     # h_data, p_data = librosa.effects.hpss(song1.data)
     # logger.debug(f"decomposition values - \nHarmonic data: {h_data}\n Percussive data: {p_data}")
     #
-    # tempo, beat_frames = librosa.beat.beat_track(y=p_data, sr=song1.sr)
+    tempo, beat_frames = librosa.beat.beat_track(y=y3, sr=sr3)
     # logger.warn(f"tempo: {tempo:.2f}")
     #
-    # beat_times = librosa.frames_to_time(beat_frames, sr=song1.sr)
+    beat_times = librosa.frames_to_time(beat_frames, sr=sr3)
     # logger.error(f"beat times: {beat_times}")
     #
-    # # segments = partition(data, samplerate)
+    #segments = partition(data, samplerate)
     #
     # # segment_freq = [librosa.stft(part) for part in segments]
     #
-    # freq = librosa.stft(song1.data)
+    #freq = librosa.stft(np.trim_zeros(y1))
+    filtered_freq = librosa.feature.spectral_rolloff(np.trim_zeros(y3), sr3)
+    # print(f'type of filtered_freq: {type(filtered_freq)}')
+    print(f'filtered_freq value= {filtered_freq}')
+    notes = librosa.hz_to_note(filtered_freq)
+    print(notes)
+    print(f'first rater value: {rating.sub_rater_neighbooring_pitch(notes[0])}')
     # print(f"freq: {freq}")
-    # mag, phase = librosa.magphase(freq)
+    #mag, phase = librosa.magphase(freq)
     # print(f"mag: {mag}")
     # print(f"phase: {phase}")
     #
@@ -147,7 +155,9 @@ def main():
     # sf.write(f"{INPUT_FOLDER}/foreground.wav", foreground, song1.sr)
     # sf.write(f"{INPUT_FOLDER}/background.wav", background, song1.sr)
     #
-    # # notes = librosa.hz_to_note(freq)
+    #notes = librosa.hz_to_note(freq)
+    #tempo, beats = librosa.beat.beat_track(y1, sr1)
+    #print(tempo)
     # # logger.info(f"notes: {notes[:5][:5]}")
     #
 
