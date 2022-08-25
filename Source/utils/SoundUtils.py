@@ -5,9 +5,9 @@ import librosa
 import librosa.display
 import ruptures as rpt
 from spleeter.separator import Separator
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Any
 
-from utils.Constants import MAX_BKPS
+from Source.utils.Constants import MAX_BKPS
 
 class INSTRUMENT(enum.Enum):
     BASS = "bass"

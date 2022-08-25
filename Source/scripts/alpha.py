@@ -1,14 +1,11 @@
 import os
-import sys
 
-import librosa
-import librosa.display
 import soundfile as sf
 
-from utils.Logger import Logger
-from utils.Constants import WAV_FILE_TEST, INPUT_FOLDER
+from Source.utils.Logger import Logger
+from Source.utils.Constants import WAV_FILE_TEST, INPUT_FOLDER
 from EA_Engine import EA_Engine
-from utils.DataModels import Song
+from Source.utils.DataModels import Song
 
 
 def main():

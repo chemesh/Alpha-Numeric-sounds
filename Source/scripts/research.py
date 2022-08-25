@@ -3,16 +3,11 @@ import os
 import librosa
 import librosa.display
 import soundfile as sf
-import numpy as np
 from spleeter.separator import Separator
 
-
-from utils.Logger import Logger
-from utils.Constants import WAV_FILE_TEST, INPUT_FOLDER
+from Source.utils.Constants import WAV_FILE_TEST, INPUT_FOLDER
 # from EA_Engine import EA_Engine
-from utils.DataModels import Song
-import utils.SoundUtils as su
-import utils.Constants as const
+import Source.utils.SoundUtils as su
 
 
 def main():

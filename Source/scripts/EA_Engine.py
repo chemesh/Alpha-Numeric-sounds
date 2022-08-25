@@ -3,10 +3,10 @@ import random
 import deap.algorithms as dpa
 from deap import base, creator, tools
 
-import utils.SoundUtils as su
-from utils.DataModels import SongPool, Song
-from utils.Logger import Logger
-from utils.Constants import POPULATION_SIZE, TOURNSIZE_PERCENT, CROSSOVER_PROBABILITY, MUTATION_PROBABILITY, SAMPLERATE
+import Source.utils.SoundUtils as su
+from Source.utils.DataModels import SongPool, Song
+from Source.utils.Logger import Logger
+from Source.utils.Constants import POPULATION_SIZE, TOURNSIZE_PERCENT, CROSSOVER_PROBABILITY, MUTATION_PROBABILITY, SAMPLERATE
 
 
 class EA_Engine(object):
