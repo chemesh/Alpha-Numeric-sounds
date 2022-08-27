@@ -1,8 +1,9 @@
 import os
 
+import Source.utils.Constants as consts
 import librosa
 import librosa.display
-# import soundfile as sf
+import soundfile as sf
 # from spleeter.separator import Separator
 #
 # from Source.utils.Constants import WAV_FILE_TEST, INPUT_FOLDER
@@ -20,13 +21,13 @@ def main():
     # song1 = Song(WAV_FILE_TEST)
     # y1, sr1 = librosa.load(os.path.join(INPUT_FOLDER, "bohemian_raphsody.wav"), offset=30., duration=30)
     # y1, sr1 = librosa.load(WAV_FILE_TEST, duration=30)
-    y1, sr1 = librosa.load(librosa.ex('fishin'), duration=60)
+    y1, sr1 = librosa.load(f'{consts.INPUT_FOLDER}/lovestory.wav', duration=60)
     bkps = su.partition(y1, sr1, 10)
     print(f"bkps: {bkps}")
-    # y2, sr2 = librosa.load(os.path.join(INPUT_FOLDER, "im_rak_tedabri.wav"), duration=30)
+    #y2, sr2 = librosa.load(os.path.join(INPUT_FOLDER, "im_rak_tedabri.wav"), duration=30)
     #
     # clean_y = su.get_clean_freq(y1)
-    # sf.write(f"{INPUT_FOLDER}/cleean.wav", y1, sr1)
+    # sf.write(f"{consts.INPUT_FOLDER}/im_rak_tedabri.wav", y1, sr1)
 
 
 

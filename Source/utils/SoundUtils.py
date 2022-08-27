@@ -7,6 +7,7 @@ import ruptures as rpt
 import matplotlib.pyplot as plt
 from spleeter.separator import Separator
 from typing import List, Tuple, Any
+import math
 
 from Source.utils.Constants import MAX_BKPS
 
@@ -196,11 +197,9 @@ def optimal_bkps(bkps_costs: List) -> int:
     for bkp_pos in range(1, len(bkps_costs) - 1):
         # given point b:(x_i,y_i), we will find the angle between a:(x_i-1,y_i-1) and c:(x-i+1,y_i+1)
         # going through point b
-        delta1 = np.array([bkp_pos-1 - bkp_pos, bkps_costs[bkp_pos - 1] - bkps_costs[bkp_pos]])
-        delta2 = np.array([bkp_pos+1 - bkp_pos, bkps_costs[bkp_pos + 1] - bkps_costs[bkp_pos]])
-        # print(f"curr pos: {bkp_pos}, delta: {delta1 - delta2}")
-        angle = np.degrees(np.arccos(np.dot(delta1, delta2) / (np.linalg.norm(delta1) * np.linalg.norm(delta2))))
-        print(f"angle: {angle}")
+        angle = compute_angle(bkp_pos - 1, bkps_costs[bkp_pos - 1],
+                              bkp_pos, bkps_costs[bkp_pos],
+                              bkp_pos + 1, bkps_costs[bkp_pos + 1])
         if not max_angle:
             max_angle = angle
             continue
@@ -209,6 +208,17 @@ def optimal_bkps(bkps_costs: List) -> int:
             max_pos = bkp_pos
             # print(f"max_pos: {max_pos}, max_angle: {max_angle}")
     return max_pos
+
+
+def compute_angle(x1, y1, x2, y2, x3, y3):
+    m1 = delta1 = (y2 - y1) / (x2 - x1)    # first incline
+    m2 = delta2 = (y3 - y2) / (x3 - x2)    # second incline
+    angl_tan = (m2 - m1) / (1 + m2 * m1)
+    print(angl_tan)
+    angle = math.atan(angl_tan)
+    #angle = np.degrees(np.arccos(np.dot(delta1, delta2) / (np.linalg.norm(delta1) * np.linalg.norm(delta2))))
+    print(f"angle between n_bkps: {x1}, {x2}, {x3}: {angle}")
+    return angle
 
 
 def separate_voices(data: np.ndarray):
@@ -249,6 +259,7 @@ def partition(data: np.ndarray, samplerate: int, n_bkps_max: int, hop_length: in
 
     array_of_n_bkps = np.arange(1, n_bkps_max + 1)
     bkps_costs = [get_sum_of_cost(algo=algo, n_bkps=n_bkps) for n_bkps in array_of_n_bkps]
+    print(f'sum of cost array y values: {bkps_costs}')
 
     # fig, ax = fig_ax((7, 4))
     # ax.plot(
@@ -268,7 +279,7 @@ def partition(data: np.ndarray, samplerate: int, n_bkps_max: int, hop_length: in
     print(f"n_bkps: {n_bkps}")
 
     # Segmentation
-    bkps = algo.predict(n_bkps=n_bkps)
+    bkps = algo.predict(n_bkps=n_bkps+5)   # HARD CODED ADDITION OF BKPS! Notice
     # Convert the estimated change points (frame counts) to actual timestamps
     bkps_times = librosa.frames_to_time(bkps, sr=samplerate, hop_length=hop_length)
     if in_ms:
