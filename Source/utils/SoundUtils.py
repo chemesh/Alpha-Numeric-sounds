@@ -4,6 +4,7 @@ import random
 import librosa
 import librosa.display
 import ruptures as rpt
+import matplotlib.pyplot as plt
 from spleeter.separator import Separator
 from typing import List, Tuple, Any
 
@@ -190,15 +191,24 @@ def get_sum_of_cost(algo: rpt.KernelCPD, n_bkps: int) -> float:
 
 def optimal_bkps(bkps_costs: List) -> int:
     max_pos = 1
-    max_delta = 0
+    max_angle = None
+
     for bkp_pos in range(1, len(bkps_costs) - 1):
-        delta1 = bkps_costs[bkp_pos - 1] - bkps_costs[bkp_pos]
-        delta2 = bkps_costs[bkp_pos] - bkps_costs[bkp_pos + 1]
+        # given point b:(x_i,y_i), we will find the angle between a:(x_i-1,y_i-1) and c:(x-i+1,y_i+1)
+        # going through point b
+        delta1 = np.array([bkp_pos-1 - bkp_pos, bkps_costs[bkp_pos - 1] - bkps_costs[bkp_pos]])
+        delta2 = np.array([bkp_pos+1 - bkp_pos, bkps_costs[bkp_pos + 1] - bkps_costs[bkp_pos]])
         # print(f"curr pos: {bkp_pos}, delta: {delta1 - delta2}")
-        if delta1 - delta2 > max_delta:
-            max_delta = delta1 - delta2
+        angle = np.degrees(np.arccos(np.dot(delta1, delta2) / (np.linalg.norm(delta1) * np.linalg.norm(delta2))))
+        print(f"angle: {angle}")
+        if not max_angle:
+            max_angle = angle
+            continue
+        if angle < max_angle:
+            max_angle = angle
             max_pos = bkp_pos
-    return max_pos + 1
+            # print(f"max_pos: {max_pos}, max_angle: {max_angle}")
+    return max_pos
 
 
 def separate_voices(data: np.ndarray):
@@ -211,6 +221,11 @@ def get_clean_freq(data: np.ndarray):
     psd = f * np.conj(f) / n
     ind = psd > np.average(psd)
     return np.fft.ifft(ind * f)
+
+
+def fig_ax(figsize=(15, 5), dpi=150):
+    """Return a (matplotlib) figure and ax objects with given size."""
+    return plt.subplots(figsize=figsize, dpi=dpi)
 
 
 def partition(data: np.ndarray, samplerate: int, n_bkps_max: int, hop_length: int = 256, in_ms: bool = False) -> List:
@@ -235,8 +250,22 @@ def partition(data: np.ndarray, samplerate: int, n_bkps_max: int, hop_length: in
     array_of_n_bkps = np.arange(1, n_bkps_max + 1)
     bkps_costs = [get_sum_of_cost(algo=algo, n_bkps=n_bkps) for n_bkps in array_of_n_bkps]
 
-    # Visually we choose n_bkps=5 (highlighted in red on the elbow plot)
+    # fig, ax = fig_ax((7, 4))
+    # ax.plot(
+    #     array_of_n_bkps,
+    #     bkps_costs,
+    #     "-*",
+    #     alpha=0.5,
+    # )
+    # ax.set_xticks(array_of_n_bkps)
+    # ax.set_xlabel("Number of change points")
+    # ax.set_title("Sum of costs")
+    # ax.grid(axis="x")
+    # ax.set_xlim(0, n_bkps_max + 1)
+    # plt.show()
+
     n_bkps = optimal_bkps(bkps_costs)
+    print(f"n_bkps: {n_bkps}")
 
     # Segmentation
     bkps = algo.predict(n_bkps=n_bkps)

@@ -2,10 +2,10 @@ import os
 
 import librosa
 import librosa.display
-import soundfile as sf
-from spleeter.separator import Separator
-
-from Source.utils.Constants import WAV_FILE_TEST, INPUT_FOLDER
+# import soundfile as sf
+# from spleeter.separator import Separator
+#
+# from Source.utils.Constants import WAV_FILE_TEST, INPUT_FOLDER
 # from EA_Engine import EA_Engine
 import Source.utils.SoundUtils as su
 
@@ -13,17 +13,20 @@ import Source.utils.SoundUtils as su
 def main():
     # logger = Logger()
     # engine = EA_Engine()
-    sep = Separator("spleeter:5stems")
+    # sep = Separator("spleeter:5stems")
 
     # data, samplerate = librosa.load(librosa.ex('trumpet'))
     # data, samplerate = librosa.load(librosa.ex('nutcracker'))
     # song1 = Song(WAV_FILE_TEST)
     # y1, sr1 = librosa.load(os.path.join(INPUT_FOLDER, "bohemian_raphsody.wav"), offset=30., duration=30)
-    y1, sr1 = librosa.load(WAV_FILE_TEST, duration=30)
-    y2, sr2 = librosa.load(os.path.join(INPUT_FOLDER, "im_rak_tedabri.wav"), duration=30)
-
-    clean_y = su.get_clean_freq(y1)
-    sf.write(f"{INPUT_FOLDER}/cleean.wav", y1, sr1)
+    # y1, sr1 = librosa.load(WAV_FILE_TEST, duration=30)
+    y1, sr1 = librosa.load(librosa.ex('fishin'), duration=60)
+    bkps = su.partition(y1, sr1, 10)
+    print(f"bkps: {bkps}")
+    # y2, sr2 = librosa.load(os.path.join(INPUT_FOLDER, "im_rak_tedabri.wav"), duration=30)
+    #
+    # clean_y = su.get_clean_freq(y1)
+    # sf.write(f"{INPUT_FOLDER}/cleean.wav", y1, sr1)
 
 
 
