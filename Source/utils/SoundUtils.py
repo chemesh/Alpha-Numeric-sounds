@@ -9,7 +9,8 @@ from spleeter.separator import Separator
 from typing import List, Tuple, Any
 import math
 
-from Source.utils.Constants import MAX_BKPS
+from Source.utils.Constants import MAX_BKPS, INPUT_FOLDER
+
 
 class INSTRUMENT(enum.Enum):
     BASS = "bass"
@@ -55,8 +56,8 @@ def rand_reconstruct(
     )
 
     # bkps = [0, t0, t1, t2, ..., tn, len(song)] such that ti is the timestamp for ith possible breakpoint in the song
-    idx1 = random.randrange(len(bkps1)-1)
-    idx2 = random.randrange(len(bkps2)-1)
+    idx1 = random.randrange(len(bkps1) - 1)
+    idx2 = random.randrange(len(bkps2) - 1)
 
     # randomize which function to use between "swap" and "overlay"
     no_change = random.choice([True, False])
@@ -86,14 +87,14 @@ def rand_reconstruct(
         new_data, _ = overlay(
             data1=data1,
             sr1=sr1,
-            data2=data2[ms_to_frame(bkps2[idx2], sr2):ms_to_frame(bkps2[idx2+1], sr2)],
+            data2=data2[ms_to_frame(bkps2[idx2], sr2):ms_to_frame(bkps2[idx2 + 1], sr2)],
             sr2=sr2,
             start_ms=bkps1[idx1],
             inst=inst
         ) if no_change else overlay(
             data1=data2,
             sr1=sr2,
-            data2=data1[ms_to_frame(bkps1[idx1], sr1):ms_to_frame(bkps1[idx1+1], sr1)],
+            data2=data1[ms_to_frame(bkps1[idx1], sr1):ms_to_frame(bkps1[idx1 + 1], sr1)],
             sr2=sr1,
             start_ms=bkps2[idx2],
             inst=inst
@@ -287,7 +288,7 @@ def partition(data: np.ndarray, samplerate: int, n_bkps_max: int, hop_length: in
     print(f"n_bkps: {n_bkps}")
 
     # Segmentation
-    bkps = algo.predict(n_bkps=n_bkps+5)   # HARD CODED ADDITION OF BKPS! Notice
+    bkps = algo.predict(n_bkps=n_bkps+1)   # HARD CODED ADDITION OF BKPS! Notice
     # Convert the estimated change points (frame counts) to actual timestamps
     bkps_times = librosa.frames_to_time(bkps, sr=samplerate, hop_length=hop_length)
     if in_ms:
@@ -299,3 +300,28 @@ def partition(data: np.ndarray, samplerate: int, n_bkps_max: int, hop_length: in
     # segments = [data[start:end] for (segment_number, (start, end)) in
     #             enumerate(rpt.utils.pairwise([0] + bkps_time_indexes), start=1)]
     # return segments
+
+
+def break_to_timed_segments(data: np.ndarray, sr: int, n_bkps_max: int = 10) -> np.ndarray:
+    bkps = partition(data, sr, n_bkps_max, in_ms=True)
+    print(f"bkps: {bkps}")
+    i = 0
+    rocks = np.empty([len(bkps) - 1], dtype=np.ndarray)
+    print('BREAKING IT DOWN:')
+    for bkp1, bkp2 in zip(bkps[:-1], bkps[1:]):
+        t1, t2 = ms_to_frame(bkp1, sr), ms_to_frame(bkp2, sr)
+        print(f'current t, t2 = {t1}, {t2}')
+        rocks[i] = data[t1:t2]
+        i += 1
+    print(f'num of segments = {i-1}')
+    return rocks
+
+
+def slice_to_audio_layers(part: np.ndarray, sr: int) -> np.ndarray:
+    layers = np.empty([5], dtype=np.ndarray)
+    voices_as_mono = separate_voices(part)
+    j = 0
+    for inst, data in voices_as_mono.items():
+        layers[j] = data, sr
+        j += 1
+    return layers
