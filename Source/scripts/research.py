@@ -25,7 +25,7 @@ def main():
     y1, sr1 = librosa.load(librosa.ex('fishin'), duration=60)
     voices = su.separate_voices(y1, as_mono=False)
     for inst, data in voices.items():
-        sf.write(f"{consts.INPUT_FOLDER}/{inst}.wav", data, sr1)
+        sf.write(f"{consts.OUTPUT_FOLDER}/{inst}.wav", data, sr1)
     voices_as_mono = su.separate_voices(y1)
     for inst, data in voices_as_mono.items():
         sf.write(f"{consts.INPUT_FOLDER}/{inst}_mono.wav", data, sr1)
