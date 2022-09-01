@@ -1,20 +1,14 @@
 import os
 
+import Source.utils.Constants as consts
 import librosa
 import librosa.display
 import soundfile as sf
-import matplotlib.pyplot as plt
-import numpy as np
-from spleeter.separator import Separator
-from pydub import AudioSegment
-
-
-from utils.Logger import Logger
-from utils.Constants import WAV_FILE_TEST, INPUT_FOLDER
-from EA_Engine import EA_Engine
-from utils.DataModels import Song
-import utils.SoundUtils as su
-import utils.Constants as const
+# from spleeter.separator import Separator
+#
+# from Source.utils.Constants import WAV_FILE_TEST, INPUT_FOLDER
+# from EA_Engine import EA_Engine
+import Source.utils.SoundUtils as su
 
 
 def main():
@@ -25,8 +19,29 @@ def main():
     # data, samplerate = librosa.load(librosa.ex('trumpet'))
     # data, samplerate = librosa.load(librosa.ex('nutcracker'))
     # song1 = Song(WAV_FILE_TEST)
-    y1, sr1 = librosa.load(os.path.join(INPUT_FOLDER, "bohemian_raphsody.wav"), duration=30)
-    y2, sr2 = librosa.load(os.path.join(INPUT_FOLDER, "im_rak_tedabri.wav"), duration=30)
+    # y1, sr1 = librosa.load(os.path.join(INPUT_FOLDER, "bohemian_raphsody.wav"), offset=30., duration=30)
+    # y1, sr1 = librosa.load(WAV_FILE_TEST, duration=30)
+    # y1, sr1 = librosa.load(f'{consts.INPUT_FOLDER}/lovestory.wav', duration=60)
+    y1, sr1 = librosa.load(librosa.ex('fishin'), duration=60)
+    voices = su.separate_voices(y1, as_mono=False)
+    for inst, data in voices.items():
+        sf.write(f"{consts.OUTPUT_FOLDER}/{inst}.wav", data, sr1)
+    voices_as_mono = su.separate_voices(y1)
+    for inst, data in voices_as_mono.items():
+        sf.write(f"{consts.INPUT_FOLDER}/{inst}_mono.wav", data, sr1)
+    # bkps = su.partition(y1, sr1, 10)
+    # print(f"bkps: {bkps}")
+    #y2, sr2 = librosa.load(os.path.join(INPUT_FOLDER, "im_rak_tedabri.wav"), duration=30)
+    #
+    # clean_y = su.get_clean_freq(y1)
+    # sf.write(f"{consts.INPUT_FOLDER}/im_rak_tedabri.wav", y1, sr1)
+
+
+
+
+
+
+
     # song1 = Song(WAV_FILE_TEST)
     # song1 = Song(WAV_FILE_TEST, duration=60.0)
     # song2 = Song(librosa.ex('nutcracker'))
@@ -45,12 +60,12 @@ def main():
     # sf.write(f"{INPUT_FOLDER}/sw1.wav", sw1, song1.sr)
     # sf.write(f"{INPUT_FOLDER}/sw2.wav", sw2, song2.sr)
 
-    sf.write(f"{INPUT_FOLDER}/rnd.wav", su.rand_reconstruct(y1, sr1, y2, sr2), sr1)
+    # sf.write(f"{INPUT_FOLDER}/rnd.wav", su.rand_reconstruct(y1, sr1, y2, sr2), sr1)
 
 
     # results = engine.mix(song1, song2)
 
-    from spleeter.audio.adapter import AudioAdapter
+    # from spleeter.audio.adapter import AudioAdapter
 
     # audio_loader = AudioAdapter.default()
     # waveform, sr = audio_loader.load(WAV_FILE_TEST, sample_rate=22050)
@@ -149,7 +164,6 @@ def main():
     #
     # # notes = librosa.hz_to_note(freq)
     # # logger.info(f"notes: {notes[:5][:5]}")
-    #
 
 
 if __name__ == "__main__":
