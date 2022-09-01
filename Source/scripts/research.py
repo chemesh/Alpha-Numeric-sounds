@@ -21,9 +21,16 @@ def main():
     # song1 = Song(WAV_FILE_TEST)
     # y1, sr1 = librosa.load(os.path.join(INPUT_FOLDER, "bohemian_raphsody.wav"), offset=30., duration=30)
     # y1, sr1 = librosa.load(WAV_FILE_TEST, duration=30)
-    y1, sr1 = librosa.load(f'{consts.INPUT_FOLDER}/lovestory.wav', duration=60)
-    bkps = su.partition(y1, sr1, 10)
-    print(f"bkps: {bkps}")
+    # y1, sr1 = librosa.load(f'{consts.INPUT_FOLDER}/lovestory.wav', duration=60)
+    y1, sr1 = librosa.load(librosa.ex('fishin'), duration=60)
+    voices = su.separate_voices(y1, as_mono=False)
+    for inst, data in voices.items():
+        sf.write(f"{consts.OUTPUT_FOLDER}/{inst}.wav", data, sr1)
+    voices_as_mono = su.separate_voices(y1)
+    for inst, data in voices_as_mono.items():
+        sf.write(f"{consts.INPUT_FOLDER}/{inst}_mono.wav", data, sr1)
+    # bkps = su.partition(y1, sr1, 10)
+    # print(f"bkps: {bkps}")
     #y2, sr2 = librosa.load(os.path.join(INPUT_FOLDER, "im_rak_tedabri.wav"), duration=30)
     #
     # clean_y = su.get_clean_freq(y1)

@@ -221,8 +221,16 @@ def compute_angle(x1, y1, x2, y2, x3, y3):
     return angle
 
 
-def separate_voices(data: np.ndarray):
-    return {n: v.to_mono() for n, v in Separator("spleeter:5stems").separate(data.reshape(data.shape[0], 1)).items()}
+def separate_voices(data: np.ndarray, as_mono=True):
+    def to_mono(ary: np.ndarray):
+        a, b = np.split(ary, 2, axis=-1)
+        mono = (a + b) / 2
+        return mono.reshape(data.shape[0])
+
+    data = data.reshape(data.shape[0], 1)
+    voices = Separator("spleeter:5stems").separate(data)
+    processed_voices = {n: to_mono(v) for n, v in voices.items()} if as_mono else voices
+    return processed_voices
 
 
 def get_clean_freq(data: np.ndarray):

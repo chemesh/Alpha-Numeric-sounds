@@ -6,6 +6,7 @@ TIME_FORMAT = "%H:%M:%S"
 ############## INPUT/OUTPUT CONSTS ##############
 WAV_FILE_TEST = "../resources/AD-FinalCountdown_pt2.wav"
 INPUT_FOLDER = "../resources"
+OUTPUT_FOLDER = "../output"
 
 ############## ENGINE CONSTS ##############
 POPULATION_SIZE = 10
