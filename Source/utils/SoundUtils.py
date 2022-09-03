@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 from spleeter.separator import Separator
 from typing import List, Tuple, Any
 import math
+import re
+import Logger as log
 
 from Source.utils.Constants import MAX_BKPS, INPUT_FOLDER
 
@@ -270,20 +272,6 @@ def partition(data: np.ndarray, samplerate: int, n_bkps_max: int, hop_length: in
     bkps_costs = [get_sum_of_cost(algo=algo, n_bkps=n_bkps) for n_bkps in array_of_n_bkps]
     print(f'sum of cost array y values: {bkps_costs}')
 
-    # fig, ax = fig_ax((7, 4))
-    # ax.plot(
-    #     array_of_n_bkps,
-    #     bkps_costs,
-    #     "-*",
-    #     alpha=0.5,
-    # )
-    # ax.set_xticks(array_of_n_bkps)
-    # ax.set_xlabel("Number of change points")
-    # ax.set_title("Sum of costs")
-    # ax.grid(axis="x")
-    # ax.set_xlim(0, n_bkps_max + 1)
-    # plt.show()
-
     n_bkps = optimal_bkps(bkps_costs)
     print(f"n_bkps: {n_bkps}")
 
@@ -295,11 +283,6 @@ def partition(data: np.ndarray, samplerate: int, n_bkps_max: int, hop_length: in
         bkps_times *= 1000
         bkps_times = bkps_times.astype("int32")
     return bkps_times
-
-    # bkps_time_indexes = (samplerate * bkps_times).astype(int).tolist()
-    # segments = [data[start:end] for (segment_number, (start, end)) in
-    #             enumerate(rpt.utils.pairwise([0] + bkps_time_indexes), start=1)]
-    # return segments
 
 
 def break_to_timed_segments(data: np.ndarray, sr: int, n_bkps_max: int = 10) -> np.ndarray:
@@ -332,3 +315,21 @@ def to_mingus_form(note):
     converts xi to x-i. for example: A8 -> A-8, B#4 -> B#-4
     '''
     return re.sub(r'([^0-9])([0-9])', r'\1-\2', re.sub(r'([^A-Z0-9])', '#', note))
+
+
+def extract_chords(data: np.ndarray, beat_drops: np.ndarray):
+    # get the data and beat frames as parameter
+    # between the beat drops, apply the stft
+    for curr_drop, next_drop in zip(beat_drops[:-1], beat_drops[1:]):
+        curr_frame = data[curr_drop:next_drop]
+        freq_domain = librosa.stft(curr_frame)
+        freq_dom_db = librosa.amplitude_to_db(np.abs(freq_domain))
+        min_freq_db = (np.min(freq_dom_db)+np.max(freq_dom_db))/2
+        filter_val = freq_dom_db > min_freq_db
+        freq_dom_db_filtered = freq_dom_db[filter_val]
+        log.info(f'current frequencies: {freq_dom_db_filtered}')
+    # filter out noise
+    # get the chord according to the frequencies in each
+
+
+
