@@ -325,3 +325,10 @@ def slice_to_audio_layers(part: np.ndarray, sr: int) -> np.ndarray:
         layers[j] = data, sr
         j += 1
     return layers
+
+
+def to_mingus_form(note):
+    '''
+    converts xi to x-i. for example: A8 -> A-8, B#4 -> B#-4
+    '''
+    return re.sub(r'([^0-9])([0-9])', r'\1-\2', re.sub(r'([^A-Z0-9])', '#', note))
