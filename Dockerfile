@@ -16,5 +16,5 @@ COPY requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install -r ./requirements.txt
 RUN pip install dependencies/spleeter-2.3.1-py3-none-any.whl
-RUN python server/manage.py migrate
-CMD ["python", "server/manage.py", "runserver", "0.0.0.0:8080"]
+RUN python ./server/manage.py migrate
+CMD ["python", "./server/manage.py", "runserver", "0.0.0.0:8080"]

@@ -1,6 +1,6 @@
-import os.path
+import os
 
 
 # WORKDIR = '/opt/AlphaNumericSounds/server'
-WORKDIR = 'server'
+WORKDIR = os.path.abspath("../..")
 RESOURCE_DIR = os.path.join(WORKDIR, 'resources')

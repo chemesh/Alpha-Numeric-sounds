@@ -1,15 +1,21 @@
-import server.Source.utils.Constants as consts
-import librosa
-import librosa.display
-import soundfile as sf
-# from spleeter.separator import Separator
-#
-# from Source.utils.Constants import WAV_FILE_TEST, INPUT_FOLDER
-# from EA_Engine import EA_Engine
-import server.Source.utils.SoundUtils as su
+# import server.Source.utils.Constants as consts
+# import librosa
+# import librosa.display
+# import soundfile as sf
+# # from spleeter.separator import Separator
+# #
+# # from Source.utils.Constants import WAV_FILE_TEST, INPUT_FOLDER
+# # from EA_Engine import EA_Engine
+# import server.Source.utils.SoundUtils as su
+from server.app.integrations.youtube_manager import YTManager
+
 
 
 def main():
+    urls = ['https://www.youtube.com/watch?v=CxKWTzr-k6s']
+    yt_manager = YTManager()
+    songs_paths = yt_manager.download(urls)
+    print(songs_paths)
     # logger = Logger()
     # engine = EA_Engine()
     # sep = Separator("spleeter:5stems")
@@ -20,13 +26,13 @@ def main():
     # y1, sr1 = librosa.load(os.path.join(INPUT_FOLDER, "bohemian_raphsody.wav"), offset=30., duration=30)
     # y1, sr1 = librosa.load(WAV_FILE_TEST, duration=30)
     # y1, sr1 = librosa.load(f'{consts.INPUT_FOLDER}/lovestory.wav', duration=60)
-    y1, sr1 = librosa.load(librosa.ex('fishin'), duration=60)
-    voices = su.separate_voices(y1, as_mono=False)
-    for inst, data in voices.items():
-        sf.write(f"{consts.OUTPUT_FOLDER}/{inst}.wav", data, sr1)
-    voices_as_mono = su.separate_voices(y1)
-    for inst, data in voices_as_mono.items():
-        sf.write(f"{consts.INPUT_FOLDER}/{inst}_mono.wav", data, sr1)
+    # y1, sr1 = librosa.load(librosa.ex('fishin'), duration=60)
+    # voices = su.separate_voices(y1, as_mono=False)
+    # for inst, data in voices.items():
+    #     sf.write(f"{consts.OUTPUT_FOLDER}/{inst}.wav", data, sr1)
+    # voices_as_mono = su.separate_voices(y1)
+    # for inst, data in voices_as_mono.items():
+    #     sf.write(f"{consts.INPUT_FOLDER}/{inst}_mono.wav", data, sr1)
     # bkps = su.partition(y1, sr1, 10)
     # print(f"bkps: {bkps}")
     #y2, sr2 = librosa.load(os.path.join(INPUT_FOLDER, "im_rak_tedabri.wav"), duration=30)

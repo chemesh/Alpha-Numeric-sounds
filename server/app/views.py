@@ -5,16 +5,16 @@ from rest_framework.decorators import api_view
 from django.http import HttpResponse, HttpRequest
 from server.Source.scripts.alpha import start
 from server.app.integrations.youtube_manager import YTManager
+from server.app.app_utils import csv_to_list
 
 
 def index(request: HttpRequest):
     return HttpResponse("Hello, world. You're at the Alpha Numeric Sounds index.")
 
-
 @api_view(['GET'])
 def add_songs_from_url(request: HttpRequest):
-    urls = request.POST['urls']
-    ea_params = request.POST['advanced']
+    urls = csv_to_list(request.GET['urls'])
+    ea_params = json.loads(request.GET['advanced'])
     # fetch songs data from youtube
     yt_manager = YTManager()
     songs_paths = yt_manager.download(urls)
