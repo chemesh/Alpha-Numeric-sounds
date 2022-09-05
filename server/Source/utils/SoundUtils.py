@@ -2,14 +2,13 @@ import enum
 import numpy as np
 import random
 import librosa
-import librosa.display
 import ruptures as rpt
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from spleeter.separator import Separator
 from typing import List, Tuple, Any
 import math
 
-from Source.utils.Constants import MAX_BKPS
+from server.Source.utils.Constants import MAX_BKPS
 
 class INSTRUMENT(enum.Enum):
     BASS = "bass"
@@ -241,9 +240,9 @@ def get_clean_freq(data: np.ndarray):
     return np.fft.ifft(ind * f)
 
 
-def fig_ax(figsize=(15, 5), dpi=150):
-    """Return a (matplotlib) figure and ax objects with given size."""
-    return plt.subplots(figsize=figsize, dpi=dpi)
+# def fig_ax(figsize=(15, 5), dpi=150):
+#     """Return a (matplotlib) figure and ax objects with given size."""
+#     return plt.subplots(figsize=figsize, dpi=dpi)
 
 
 def partition(data: np.ndarray, samplerate: int, n_bkps_max: int, hop_length: int = 256, in_ms: bool = False) -> List:

@@ -1,6 +1,6 @@
 import librosa
 import numpy as np
-import Source.utils.SoundUtils as su
+import server.Source.utils.SoundUtils as su
 
 
 class Song(object):

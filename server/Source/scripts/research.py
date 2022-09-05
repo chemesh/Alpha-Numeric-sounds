@@ -1,6 +1,4 @@
-import os
-
-import Source.utils.Constants as consts
+import server.Source.utils.Constants as consts
 import librosa
 import librosa.display
 import soundfile as sf
@@ -8,7 +6,7 @@ import soundfile as sf
 #
 # from Source.utils.Constants import WAV_FILE_TEST, INPUT_FOLDER
 # from EA_Engine import EA_Engine
-import Source.utils.SoundUtils as su
+import server.Source.utils.SoundUtils as su
 
 
 def main():

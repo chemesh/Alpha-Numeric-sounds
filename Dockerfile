@@ -7,13 +7,14 @@ RUN apt-get -y update
 RUN apt-get -y upgrade
 RUN apt-get install -y ffmpeg
 
-COPY AlphaNumericSounds ./server/AlphaNumericSounds
-COPY app ./server/app
-COPY Source ./server/Source
+
+COPY server ./server
 COPY manage.py ./server
+COPY dependencies ./dependencies
 COPY requirements.txt .
 
 RUN pip install --upgrade pip
 RUN pip install -r ./requirements.txt
+RUN pip install dependencies/spleeter-2.3.1-py3-none-any.whl
 RUN python server/manage.py migrate
 CMD ["python", "server/manage.py", "runserver", "0.0.0.0:8080"]
