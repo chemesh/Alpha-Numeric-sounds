@@ -34,10 +34,10 @@ class EA_Engine(object):
         def _sr2(individual):
             return random.random()
 
-    def __init__(self, logger: Logger):
+    def __init__(self, logger: Logger=None):
         self.toolbox = base.Toolbox()
         self.song_pool = SongPool()
-        self.logger = logger
+        # self.logger = logger
 
         creator.create("Fitness_test", base.Fitness, weights=(1.0,))
         # creator.create("Individual", object, sr=int, raw_data=np.ndarray, fitness=Fitness)

@@ -5,8 +5,9 @@
 # # from spleeter.separator import Separator
 # #
 # # from Source.utils.Constants import WAV_FILE_TEST, INPUT_FOLDER
-# # from EA_Engine import EA_Engine
+from EA_Engine import EA_Engine
 # import server.Source.utils.SoundUtils as su
+from server.Source.utils.DataModels import Song
 from server.app.integrations.youtube_manager import YTManager
 
 
@@ -17,7 +18,10 @@ def main():
     songs_paths = yt_manager.download(urls)
     print(songs_paths)
     # logger = Logger()
-    # engine = EA_Engine()
+    engine = EA_Engine()
+    s1 = s2 = Song(*songs_paths)
+    res = engine.mix(s1, s2)
+    print(res)
     # sep = Separator("spleeter:5stems")
 
     # data, samplerate = librosa.load(librosa.ex('trumpet'))

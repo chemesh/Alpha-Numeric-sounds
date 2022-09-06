@@ -4,9 +4,9 @@ import random
 import librosa
 import ruptures as rpt
 # import matplotlib.pyplot as plt
-from spleeter.separator import Separator
 from typing import List, Tuple, Any
 import math
+from server.Source.utils.SingletonSeperator import SingleSeperator
 
 from server.Source.utils.Constants import MAX_BKPS
 
@@ -20,6 +20,7 @@ class INSTRUMENT(enum.Enum):
     @classmethod
     def list(cls):
         return list(map(lambda c: c.value, cls))
+
 
 
 def denoise(y: np.ndarray, min_db_ratio: float) -> np.ndarray:
@@ -227,7 +228,7 @@ def separate_voices(data: np.ndarray, as_mono=True):
         return mono.reshape(data.shape[0])
 
     data = data.reshape(data.shape[0], 1)
-    voices = Separator("spleeter:5stems").separate(data)
+    voices = SingleSeperator().separate(data)
     processed_voices = {n: to_mono(v) for n, v in voices.items()} if as_mono else voices
     return processed_voices
 
