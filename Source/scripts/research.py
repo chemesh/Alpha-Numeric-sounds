@@ -9,6 +9,8 @@ import soundfile as sf
 # from Source.utils.Constants import WAV_FILE_TEST, INPUT_FOLDER
 # from EA_Engine import EA_Engine
 import Source.utils.SoundUtils as su
+from Source.utils.SoundUtils import INSTRUMENT
+import Source.utils.Logger as logger
 
 
 def main():
@@ -22,13 +24,21 @@ def main():
     # y1, sr1 = librosa.load(os.path.join(INPUT_FOLDER, "bohemian_raphsody.wav"), offset=30., duration=30)
     # y1, sr1 = librosa.load(WAV_FILE_TEST, duration=30)
     # y1, sr1 = librosa.load(f'{consts.INPUT_FOLDER}/lovestory.wav', duration=60)
-    y1, sr1 = librosa.load(librosa.ex('fishin'), duration=60)
-    voices = su.separate_voices(y1, as_mono=False)
-    for inst, data in voices.items():
-        sf.write(f"{consts.OUTPUT_FOLDER}/{inst}.wav", data, sr1)
-    voices_as_mono = su.separate_voices(y1)
-    for inst, data in voices_as_mono.items():
-        sf.write(f"{consts.INPUT_FOLDER}/{inst}_mono.wav", data, sr1)
+    log = logger.Logger()
+    y1, sr1 = librosa.load(f'{consts.INPUT_FOLDER}/Lola-Marsh-Only-For-A-Moment.wav', duration=60)
+    timed_segs = su.break_to_timed_segments(y1, sr1)
+    #key= su.extract_key(y1, sr1)
+    #log.info(f'found key: {key}')
+    print(timed_segs.shape)
+    tempo, beat_track = librosa.beat.beat_track(timed_segs[2], sr1)
+    log.info('trying to extract frequencies for chords...')
+    layers_of_2nd_seg = su.slice_to_audio_layers(timed_segs[2], sr1)
+    print(layers_of_2nd_seg.shape)
+    notes, n_fft = su.extract_notes(layers_of_2nd_seg[INSTRUMENT.VOCALS][0], beat_track)
+    rms = librosa.feature.rms(layers_of_2nd_seg[0][0], frame_length=n_fft)
+    log.info(f'rms found: {rms}, with shape {rms.shape}')
+    # sf.write(f"{consts.INPUT_FOLDER}/guess_who_mono.wav", layers_of_2nd_seg[0][0], sr1)
+
     # bkps = su.partition(y1, sr1, 10)
     # print(f"bkps: {bkps}")
     #y2, sr2 = librosa.load(os.path.join(INPUT_FOLDER, "im_rak_tedabri.wav"), duration=30)

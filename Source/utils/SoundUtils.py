@@ -8,11 +8,9 @@ import matplotlib.pyplot as plt
 from spleeter.separator import Separator
 from typing import List, Tuple, Any
 import math
-import re
-import Logger as log
-
+from Source.utils.Logger import Logger as log
 from Source.utils.Constants import MAX_BKPS, INPUT_FOLDER
-
+from Source.utils.keydin import pitchdistribution as pd, classifiers
 
 class INSTRUMENT(enum.Enum):
     BASS = "bass"
@@ -317,19 +315,60 @@ def to_mingus_form(note):
     return re.sub(r'([^0-9])([0-9])', r'\1-\2', re.sub(r'([^A-Z0-9])', '#', note))
 
 
-def extract_chords(data: np.ndarray, beat_drops: np.ndarray):
-    # get the data and beat frames as parameter
-    # between the beat drops, apply the stft
-    for curr_drop, next_drop in zip(beat_drops[:-1], beat_drops[1:]):
-        curr_frame = data[curr_drop:next_drop]
-        freq_domain = librosa.stft(curr_frame)
-        freq_dom_db = librosa.amplitude_to_db(np.abs(freq_domain))
-        min_freq_db = (np.min(freq_dom_db)+np.max(freq_dom_db))/2
-        filter_val = freq_dom_db > min_freq_db
-        freq_dom_db_filtered = freq_dom_db[filter_val]
-        log.info(f'current frequencies: {freq_dom_db_filtered}')
-    # filter out noise
+def extract_notes(data: np.ndarray, corresponding_beat_drops: np.ndarray, sr: int=22050):
+    logger = log()
+    # we want stft windows numbered as bit frames
+    beat_track_len = corresponding_beat_drops.shape[0]
+    first_space = corresponding_beat_drops[2] - corresponding_beat_drops[1]
+    mid_space = corresponding_beat_drops[round((beat_track_len/3)+1)] - \
+                corresponding_beat_drops[round(beat_track_len/3)]
+    last_space = corresponding_beat_drops[round((2*beat_track_len/3)+1)] - \
+                 corresponding_beat_drops[round(2*beat_track_len/3)]
+    win_length = librosa.frames_to_samples(round((first_space + mid_space + last_space)/3))
+    logger.info(f'calculated win_length of {win_length}')
+    corr_frequencies = librosa.fft_frequencies(sr=sr, n_fft=win_length)
+    logger.info(f'corresponding frequencies: {corr_frequencies}')
+    freq_domain = librosa.stft(data, n_fft=win_length, hop_length=round(3*win_length/4))
+    freqs_list = np.empty([freq_domain.shape[0]], dtype=np.ndarray)
+    notes_list = np.empty([freq_domain.shape[0]], dtype=np.ndarray)
+    #chords_list = np.empty([freq_domain.shape[0]], dtype=object)
+    j = 0
+    try:
+        for beat_frame_freqs in freq_domain:
+            min_freq = 3 * (np.max(beat_frame_freqs)) / 4
+            only_true_idxs = np.where(beat_frame_freqs >= min_freq)
+            idx_keeper = 0
+            i = 0
+            #logger.info(f'filtered freqs: {(only_true_idxs[0])}')
+            freqs_list[j] = np.empty([len(only_true_idxs[0])], dtype=np.float32)
+            for idx in only_true_idxs[0]:
+                freqs_list[j][i] = corr_frequencies[idx]
+                i += 1
+                idx_keeper = idx
+            #logger.info(f'chords: {chord_list[j]}')
+            notes_list[j] = librosa.hz_to_note(freqs_list[j]) if not 0 in only_true_idxs[0] else None
+            logger.info(f'current notes: {notes_list[j]}')
+            #logger.info(f'current chord: {chords_list[j]}')
+            j += 1
+    except Exception as e:
+        logger.error(f'FELL ON: i = {i-1}, j = {j-1}, idx = {idx_keeper}, value = {corr_frequencies[idx_keeper]}\nError: {e.__str__()}')
+        exit(1)
+    return notes_list, win_length
     # get the chord according to the frequencies in each
 
+def extract_key(data: np.ndarray, sr: int):
+    # Use naive Bayes classifier to guess the key of SongInGMajor.mp3
+    naive_bayes = classifiers.NaiveBayes()
+    dist = pd.PitchDistribution.pitch_distribution(data, sr)
+    key = naive_bayes.get_key(dist)  # Returns Key object Key('G', 'major')
+
+    # Use Krumhansl-Schmuckler classifier to guess the key of SongInBMinor.mp3
+    krumhansl_schmuckler = classifiers.KrumhanslSchmuckler()
+    dist = pd.PitchDistribution.pitch_distribution(data, sr)
+    #key = krumhansl_schmuckler.get_key(dist)  # Returns Key object Key('B', 'minor')
+    return key
 
 
+#
+# def idx_2_freq(i: int, sr: float, n_fft: int):
+#     return float(i * (sr / n_fft / 2.))
