@@ -9,7 +9,6 @@ RUN apt-get install -y ffmpeg
 
 
 COPY server ./server
-COPY manage.py ./server
 COPY dependencies ./dependencies
 COPY requirements.txt .
 

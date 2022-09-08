@@ -37,9 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'corsheaders',
     'rest_framework',
-    'server.app'
+    'app'
 ]
 
 MIDDLEWARE = [
@@ -49,12 +48,10 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.common.CommonMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware'
 ]
 
-ROOT_URLCONF = 'server.AlphaNumericSounds.urls'
+ROOT_URLCONF = 'AlphaNumericSounds.urls'
 
 TEMPLATES = [
     {
@@ -72,7 +69,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'server.AlphaNumericSounds.wsgi.application'
+WSGI_APPLICATION = 'AlphaNumericSounds.wsgi.application'
 
 
 # Database
