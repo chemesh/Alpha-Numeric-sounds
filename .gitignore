@@ -1,6 +1,7 @@
 
 # AlphaNumericSounds project files
 logs/
+venv-ans/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
