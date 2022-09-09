@@ -1,15 +1,14 @@
 import json
-import os
-import random
+# import os
 
 from rest_framework.decorators import api_view
 from django.http import HttpResponse, HttpRequest
-from Source.scripts.alpha import start
-from app.integrations.youtube_manager import YTManager
+# from Source.scripts.alpha import start
+# from app.integrations.youtube_manager import YTManager
 from app.app_utils import csv_to_list, STATUS, BasicContent
 
 
-def index(request: HttpRequest):
+def index(request):
     return HttpResponse("Hello, world. You're at the Alpha Numeric Sounds index.")
 
 @api_view(['POST'])
@@ -60,12 +59,11 @@ def add_songs_from_url(request: HttpRequest):
         content.error = e
 
     response.write(content.as_json())
-    # response['Content-Length'] = content_size
     return response
 
 
 @api_view(['GET'])
-def poll_updates(request: HttpRequest):
+def poll_updates(request):
     """
     Request format: {}
     """
