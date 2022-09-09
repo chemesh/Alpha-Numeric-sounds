@@ -12,6 +12,8 @@ from Source.utils.Logger import Logger as log
 from Source.utils.Constants import MAX_BKPS, INPUT_FOLDER
 from Source.utils.keydin import pitchdistribution as pd, classifiers
 import re
+from mingus.containers import Note
+
 
 class INSTRUMENT(enum.Enum):
     BASS = "bass"
@@ -296,36 +298,51 @@ def break_to_timed_segments(data: np.ndarray, sr: int, n_bkps_max: int = 10) -> 
         rocks[i] = data[t1:t2]
         i += 1
     print(f'num of segments = {i-1}')
-    return rocks
+    return rocks, bkps
 
 
 def slice_to_audio_layers(part: np.ndarray, sr: int) -> np.ndarray:
     layers = np.empty([5], dtype=np.ndarray)
     voices_as_mono = separate_voices(part)
     j = 0
+    layers[0]
     for inst, data in voices_as_mono.items():
         layers[j] = data, sr
         j += 1
     return layers
 
 
-def to_mingus_form(note):
+def to_mingus_form(note: str):
     '''
     converts xi to x-i. for example: A8 -> A-8, B#4 -> B#-4
     '''
-    return re.sub(r'([^0-9])([0-9])', r'\1-\2', re.sub(r'([^A-Z0-9])', '#', note))
+    if note is None:
+        return None
+    elif '-' in note:
+        if '1' in note:
+            note = re.sub(r'([^A-Z0-9\-])', '#', note)
+            note_split = str.split(note, '-')
+            return Note(note_split[0], -1)
+        else:
+            return None
+    else:
+        return Note(re.sub(r'([^0-9])([0-9])', r'\1-\2', re.sub(r'([^A-Z0-9])', '#', note)))
+
+
+def calc_win_length_by_beat_track(bit_track: np.ndarray):
+    beat_track_len = bit_track.shape[0]
+    first_space = bit_track[2] - bit_track[1]
+    mid_space = bit_track[round((beat_track_len/3)+1)] - \
+                bit_track[round(beat_track_len/3)]
+    last_space = bit_track[round((2*beat_track_len/3)+1)] - \
+                 bit_track[round(2*beat_track_len/3)]
+    return librosa.frames_to_samples(round((first_space + mid_space + last_space)/3))
 
 
 def extract_notes(data: np.ndarray, corresponding_beat_drops: np.ndarray, sr: int=22050):
     logger = log()
     # we want stft windows numbered as bit frames
-    beat_track_len = corresponding_beat_drops.shape[0]
-    first_space = corresponding_beat_drops[2] - corresponding_beat_drops[1]
-    mid_space = corresponding_beat_drops[round((beat_track_len/3)+1)] - \
-                corresponding_beat_drops[round(beat_track_len/3)]
-    last_space = corresponding_beat_drops[round((2*beat_track_len/3)+1)] - \
-                 corresponding_beat_drops[round(2*beat_track_len/3)]
-    win_length = librosa.frames_to_samples(round((first_space + mid_space + last_space)/3))
+    win_length = calc_win_length_by_beat_track(corresponding_beat_drops)
     logger.info(f'calculated win_length of {win_length}')
     corr_frequencies = librosa.fft_frequencies(sr=sr, n_fft=win_length)
     logger.info(f'corresponding frequencies: {corr_frequencies}')
@@ -336,26 +353,26 @@ def extract_notes(data: np.ndarray, corresponding_beat_drops: np.ndarray, sr: in
     j = 0
     try:
         for beat_frame_freqs in freq_domain:
+            i = 0
+            idx_keeper = 0
+            logger.info('filtering out non-dominant frequencies...')
             min_freq = 4 * (np.max(beat_frame_freqs)) / 5
             only_true_idxs = np.where(beat_frame_freqs >= min_freq)
-            idx_keeper = 0
-            i = 0
-            #logger.info(f'filtered freqs: {(only_true_idxs[0])}')
             freqs_list[j] = np.empty([len(only_true_idxs[0])], dtype=np.float32)
             for idx in only_true_idxs[0]:
+                logger.info('transcribing index to frequency..')
                 freqs_list[j][i] = corr_frequencies[idx]
                 i += 1
                 idx_keeper = idx
-            #logger.info(f'chords: {chord_list[j]}')
-            notes_list[j] = librosa.hz_to_note(freqs_list[j]) if not 0 in only_true_idxs[0] else None
+            notes_list[j] = librosa.hz_to_note(freqs_list[j]) if 0 not in only_true_idxs[0] else None
             logger.info(f'current notes: {notes_list[j]}')
-            #logger.info(f'current chord: {chords_list[j]}')
             j += 1
     except Exception as e:
-        logger.error(f'FELL ON: i = {i-1}, j = {j-1}, idx = {idx_keeper}, value = {corr_frequencies[idx_keeper]}\nError: {e.__str__()}')
+        logger.error(f'FELL ON (black days...): i = {i-1}, j = {j-1}, idx = {idx_keeper}, value = {corr_frequencies[idx_keeper]}\nError: {e.__str__()}')
         exit(1)
     return notes_list, win_length
     # get the chord according to the frequencies in each
+
 
 def extract_key(data: np.ndarray, sr: int):
     # Use naive Bayes classifier to guess the key of SongInGMajor.mp3
@@ -370,6 +387,17 @@ def extract_key(data: np.ndarray, sr: int):
     return key
 
 
+def compute_similarity_matrix_slow(self, chroma):
+    """Slow but straightforward way to compute time time similarity matrix"""
+    num_samples = chroma.shape[1]
+    time_time_similarity = np.zeros((num_samples, num_samples))
+    for i in range(num_samples):
+        for j in range(num_samples):
+            # For every pair of samples, check similarity
+            time_time_similarity[i, j] = 1 - (
+                np.linalg.norm(chroma[:, i] - chroma[:, j]) / sqrt(12))
+
+    return time_time_similarity
 #
 # def idx_2_freq(i: int, sr: float, n_fft: int):
 #     return float(i * (sr / n_fft / 2.))
