@@ -1,6 +1,6 @@
 import os
 import youtube_dl
-import server.app.integrations.constants as consts
+import app.integrations.constants as consts
 
 SONG_TEMPLATE_NAME = '%(title)s.%(ext)s'
 

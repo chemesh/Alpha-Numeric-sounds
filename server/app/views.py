@@ -3,9 +3,9 @@ import os
 
 from rest_framework.decorators import api_view
 from django.http import HttpResponse, HttpRequest
-from server.Source.scripts.alpha import start
-from server.app.integrations.youtube_manager import YTManager
-from server.app.app_utils import csv_to_list
+from Source.scripts.alpha import start
+from app.integrations.youtube_manager import YTManager
+from app.app_utils import csv_to_list
 
 
 def index(request: HttpRequest):
@@ -13,6 +13,19 @@ def index(request: HttpRequest):
 
 @api_view(['GET'])
 def add_songs_from_url(request: HttpRequest):
+    """
+    Request format:
+    {
+        "urls"(list): "[url1,url2]"
+        "advanced"(json):   {
+                                "max_gens": int,
+                                "population_size": int,
+                                "selection_p": int(0-100),
+                                "mutation_prob": int(0-100),
+                                "crossover_prob": int(0-100)
+                            }
+    }
+    """
     urls = csv_to_list(request.GET['urls'])
     ea_params = json.loads(request.GET['advanced'])
     # fetch songs data from youtube
@@ -32,7 +45,7 @@ def add_songs_from_url(request: HttpRequest):
 
     response = HttpResponse()
     response.write(json.dumps(mapped_data))
-    response['Content-Type'] ='audio/wav'
+    response['Conte Type'] ='audio/wav'
     response['Content-Length'] = content_size
     return response
 

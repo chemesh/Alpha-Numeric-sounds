@@ -6,9 +6,9 @@ import ruptures as rpt
 # import matplotlib.pyplot as plt
 from typing import List, Tuple, Any
 import math
-from server.Source.utils.SingletonSeperator import SingleSeperator
+from Source.utils.SingletonSeperator import SingleSeperator
 
-from server.Source.utils.Constants import MAX_BKPS
+from Source.utils.Constants import MAX_BKPS
 
 class INSTRUMENT(enum.Enum):
     BASS = "bass"

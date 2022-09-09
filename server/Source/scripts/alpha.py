@@ -1,9 +1,9 @@
 import soundfile as sf
 
-from server.Source.utils.Logger import Logger
-from server.Source.utils.Constants import OUTPUT_FOLDER
-from server.Source.scripts.EA_Engine import EA_Engine
-from server.Source.utils.DataModels import Song
+from Source.utils.Logger import Logger
+from Source.utils.Constants import OUTPUT_FOLDER
+from Source.scripts.EA_Engine import EA_Engine
+from Source.utils.DataModels import Song
 
 
 def start(paths):

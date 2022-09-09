@@ -7,8 +7,8 @@
 # # from Source.utils.Constants import WAV_FILE_TEST, INPUT_FOLDER
 from EA_Engine import EA_Engine
 # import server.Source.utils.SoundUtils as su
-from server.Source.utils.DataModels import Song
-from server.app.integrations.youtube_manager import YTManager
+from Source.utils.DataModels import Song
+from app.integrations.youtube_manager import YTManager
 
 
 

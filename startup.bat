@@ -1,8 +1,6 @@
-cmd /k "cd /d venv-ans\Scripts & activate.bat & cd /d"
-
 pip install --upgrade pip
 pip install -r requirements.txt
-pip install dependencies\spleeter-2.3.1-py3-none-any.whl
+pip install dependencies\spleeter-2.3.2-py3-none-any.whl
 
 set PYTHONPATH=%PYTHONPATH%;cd
 

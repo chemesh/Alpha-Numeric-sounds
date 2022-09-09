@@ -3,10 +3,10 @@ import random
 import deap.algorithms as dpa
 from deap import base, creator, tools
 
-import server.Source.utils.SoundUtils as su
-from server.Source.utils.DataModels import SongPool, Song
-from server.Source.utils.Logger import Logger
-from server.Source.utils.Constants import POPULATION_SIZE, TOURNSIZE_PERCENT, CROSSOVER_PROBABILITY, MUTATION_PROBABILITY, SAMPLERATE
+import Source.utils.SoundUtils as su
+from Source.utils.DataModels import SongPool, Song
+from Source.utils.Logger import Logger
+from Source.utils.Constants import POPULATION_SIZE, TOURNSIZE_PERCENT, CROSSOVER_PROBABILITY, MUTATION_PROBABILITY, SAMPLERATE
 
 
 class EA_Engine(object):
@@ -93,6 +93,7 @@ class EA_Engine(object):
             num_of_bkps=0,
             popsize=POPULATION_SIZE,
             tournsize_p=TOURNSIZE_PERCENT,
+            selection_p=None,
             mutation_prob=MUTATION_PROBABILITY,
             crossover_prob=CROSSOVER_PROBABILITY):
 
