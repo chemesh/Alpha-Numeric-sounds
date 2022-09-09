@@ -1,9 +1,9 @@
 
 import numpy as np
 from mingus.containers import Note
-import SoundUtils as su
+import Source.utils.SoundUtils as su
 
-def sub_rater_neighbooring_pitch(notes: np.ndarray):
+def sub_rater_neighboring_pitch(notes: np.ndarray):
     '''
     Calculates rating according to number of crazy notes
     '''
@@ -32,4 +32,7 @@ def sub_rater_notes_density_diversity(notes: np.ndarray):
     # for each two notes, calculate the distance in octaves
     # increase crazy note counter for each calculated distance beyond 2
     # return crazynotes counter divided by total number of notes
+    return
+
+def sub_rater_count_note_on_beat(notes: np.ndarray, beat_track):
     return

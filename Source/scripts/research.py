@@ -11,6 +11,7 @@ import soundfile as sf
 import Source.utils.SoundUtils as su
 from Source.utils.SoundUtils import INSTRUMENT
 import Source.utils.Logger as logger
+import Source.utils.Raters as rate
 
 
 def main():
@@ -27,16 +28,19 @@ def main():
     log = logger.Logger()
     y1, sr1 = librosa.load(f'{consts.INPUT_FOLDER}/Lola-Marsh-Only-For-A-Moment.wav', duration=60)
     timed_segs = su.break_to_timed_segments(y1, sr1)
-    #key= su.extract_key(y1, sr1)
+    key= su.extract_key(y1, sr1)
     #log.info(f'found key: {key}')
     print(timed_segs.shape)
     tempo, beat_track = librosa.beat.beat_track(timed_segs[2], sr1)
     log.info('trying to extract frequencies for chords...')
     layers_of_2nd_seg = su.slice_to_audio_layers(timed_segs[2], sr1)
     print(layers_of_2nd_seg.shape)
-    notes, n_fft = su.extract_notes(layers_of_2nd_seg[INSTRUMENT.VOCALS][0], beat_track)
+    notes, n_fft = su.extract_notes(layers_of_2nd_seg[0][0], beat_track)
+    key = su.extract_key(layers_of_2nd_seg[INSTRUMENT.VOCALS.value][0], sr1)
     rms = librosa.feature.rms(layers_of_2nd_seg[0][0], frame_length=n_fft)
     log.info(f'rms found: {rms}, with shape {rms.shape}')
+    first_rate = rate.sub_rater_neighboring_pitch(notes)
+    log.info(f'neighboring pitch rating of vocals of second segment: {first_rate}')
     # sf.write(f"{consts.INPUT_FOLDER}/guess_who_mono.wav", layers_of_2nd_seg[0][0], sr1)
 
     # bkps = su.partition(y1, sr1, 10)

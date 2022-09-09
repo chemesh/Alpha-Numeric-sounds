@@ -11,6 +11,7 @@ import math
 from Source.utils.Logger import Logger as log
 from Source.utils.Constants import MAX_BKPS, INPUT_FOLDER
 from Source.utils.keydin import pitchdistribution as pd, classifiers
+import re
 
 class INSTRUMENT(enum.Enum):
     BASS = "bass"
@@ -335,7 +336,7 @@ def extract_notes(data: np.ndarray, corresponding_beat_drops: np.ndarray, sr: in
     j = 0
     try:
         for beat_frame_freqs in freq_domain:
-            min_freq = 3 * (np.max(beat_frame_freqs)) / 4
+            min_freq = 4 * (np.max(beat_frame_freqs)) / 5
             only_true_idxs = np.where(beat_frame_freqs >= min_freq)
             idx_keeper = 0
             i = 0
@@ -360,12 +361,12 @@ def extract_key(data: np.ndarray, sr: int):
     # Use naive Bayes classifier to guess the key of SongInGMajor.mp3
     naive_bayes = classifiers.NaiveBayes()
     dist = pd.PitchDistribution.pitch_distribution(data, sr)
-    key = naive_bayes.get_key(dist)  # Returns Key object Key('G', 'major')
+    key = naive_bayes.get_key(dist)
 
     # Use Krumhansl-Schmuckler classifier to guess the key of SongInBMinor.mp3
     krumhansl_schmuckler = classifiers.KrumhanslSchmuckler()
     dist = pd.PitchDistribution.pitch_distribution(data, sr)
-    #key = krumhansl_schmuckler.get_key(dist)  # Returns Key object Key('B', 'minor')
+    #key = krumhansl_schmuckler.get_key(dist)
     return key
 
 
