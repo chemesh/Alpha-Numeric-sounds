@@ -1,10 +1,13 @@
 from django.db import models
 
-# Create your models here.
 
 class Execution(models.Model):
     identifier = models.CharField(max_length=100)
-    date = models.DateField()
+    state = models.CharField(max_length=30)
+    timestamp = models.DateTimeField()
     song_1 = models.FilePathField()
     song_2 = models.FilePathField()
-    result = models.FilePathField()
+    result = models.FileField(upload_to=None)
+
+    def __str__(self):
+        return self.identifier
