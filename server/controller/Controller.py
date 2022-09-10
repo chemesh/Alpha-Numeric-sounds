@@ -1,5 +1,6 @@
 import os.path
 import multiprocessing
+import traceback
 import soundfile as sf
 
 from Source.utils.Logger import Logger
@@ -30,29 +31,35 @@ class Controller:
             raise ExecutionError(msg)
 
     def _run(self, urls, params, execution_model):
-        # fetch songs data from youtube
-        yt_manager = YTManager()
-        songs_paths = yt_manager.download(urls)
+        try:
+            # fetch songs data from youtube
+            yt_manager = YTManager()
+            songs_paths = yt_manager.download(urls)
 
-        # update songs localpath in DB
-        execution_model.song_1 = songs_paths[0]
-        execution_model.song_2 = songs_paths[1]
-        execution_model.state = STATUS.IN_PROGRESS
-        execution_model.save()
+            # update songs localpath in DB
+            execution_model.song_1 = songs_paths[0]
+            execution_model.song_2 = songs_paths[1]
+            execution_model.state = STATUS.IN_PROGRESS
+            execution_model.save()
 
-        # Backend logic
-        # songs = [Song.from_wav_file(path) for path in songs_paths]
-        # results = self.engine.mix(*songs, **params)
-        # file_path = os.path.join(OUTPUT_FOLDER, f"result_{execution_model.identifier}")
-        # sf.write(f"{file_path}.wav", results[0].data, results[0].sr)
+            # Backend logic
+            # songs = [Song.from_wav_file(path) for path in songs_paths]
+            # results = self.engine.mix(*songs, **params)
+            # file_path = os.path.join(OUTPUT_FOLDER, f"result_{execution_model.identifier}")
+            # sf.write(f"{file_path}.wav", results[0].data, results[0].sr)
 
-        # for testing only
-        file_path = "C:\\Users\\roy12\\PycharmProjects\\AlphaNumericSounds\\server\\resources\\AD-FinalCountdown_pt2.wav"
+            # for testing only
+            file_path = "C:\\Users\\roy12\\PycharmProjects\\AlphaNumericSounds\\server\\resources\\AD-FinalCountdown_pt2.wav"
 
-        # save the algorithm results to DB
-        execution_model.result = file_path
-        execution_model.state = STATUS.DONE
-        execution_model.save()
+            # save the algorithm results to DB
+            execution_model.result = file_path
+            execution_model.state = STATUS.DONE
+            execution_model.save()
+
+        except Exception as e:
+            execution_model.state = STATUS.ERROR
+            self.logger.error(e)
+            self.logger.error(traceback.format_exc())
 
 
 class ExecutionError(Exception):
