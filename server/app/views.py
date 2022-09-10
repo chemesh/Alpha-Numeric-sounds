@@ -7,6 +7,8 @@ from django.http import HttpResponse, HttpRequest
 from app.app_utils import csv_to_list, STATUS, BasicContent
 from .models import Execution
 from controller.Controller import Controller
+from django.views.decorators.csrf import csrf_exempt
+from app.service import create_content_from_result
 
 controller = Controller()
 
@@ -16,6 +18,7 @@ def index(request):
     return HttpResponse("Hello, world. You're at the Alpha Numeric Sounds index.")
 
 
+@csrf_exempt # TODO: check if need, not sure
 @api_view(['POST'])
 def add_songs_from_url(request: HttpRequest):
     """
@@ -77,7 +80,6 @@ def poll_updates(request, exec_id):
     response.status_code = 200
     content = Content()
     try:
-
         # get data on execution with exec_id from DB
         exec_model = Execution.objects.get(identifier=exec_id)
         content.id = exec_model.identifier
@@ -88,6 +90,10 @@ def poll_updates(request, exec_id):
             # with exec_model.result.open("rb")as f:
             #     content.file64 = b64encode(f.read()).decode('utf-8')
             content.isReady = True
+            content.file64 = create_content_from_result(exec_id)
+            if content.file64 == -1:
+                print('I failed!')
+                content.error = 'failed to create final result'
 
     except Exception as e:
         response.status_code = 404
