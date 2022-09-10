@@ -6,7 +6,7 @@ from rest_framework.decorators import api_view
 from django.http import HttpResponse, HttpRequest
 from app.app_utils import csv_to_list, STATUS, BasicContent
 from .models import Execution
-from controller import Controller
+from controller.Controller import Controller
 
 controller = Controller()
 
@@ -45,7 +45,7 @@ def add_songs_from_url(request: HttpRequest):
         ea_params = json.loads(request.GET['advanced'])
         execution = Execution(identifier=uuid.uuid4(), timestamp=datetime.now(), state=STATUS.INIT)
         execution.save()
-        content.id = execution.identifier
+        content.id = str(execution.identifier)
 
         controller.start_exec(urls, ea_params, execution)
 
@@ -54,7 +54,7 @@ def add_songs_from_url(request: HttpRequest):
     except Exception as e:
         response.status_code = 404
         content.msg = "could not verify parameters"
-        content.error = e
+        content.error = str(e)
 
     response.write(content.as_json())
     return response
@@ -67,7 +67,7 @@ def poll_updates(request, exec_id):
     """
     class Content(BasicContent):
         def __init__(self):
-            self.exec_id = ""
+            self.id = ""
             self.status = ""
             self.isReady = False
             self.file64 = ""
@@ -80,7 +80,7 @@ def poll_updates(request, exec_id):
 
         # get data on execution with exec_id from DB
         exec_model = Execution.objects.get(identifier=exec_id)
-        content.exec_id = exec_model.identifier
+        content.id = exec_model.identifier
         content.status = exec_model.state
 
         if exec_model.state == STATUS.DONE:
