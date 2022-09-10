@@ -1,39 +1,20 @@
 import json
-import os
+import uuid
 
 from datetime import datetime
 from rest_framework.decorators import api_view
 from django.http import HttpResponse, HttpRequest
-from Source.scripts.alpha import start
-from app.integrations.youtube_manager import YTManager
 from app.app_utils import csv_to_list, STATUS, BasicContent
 from .models import Execution
-import uuid
+from controller import Controller
 
-
-def run_algo(urls, params, execution_model: Execution):
-    # fetch songs data from youtube
-    yt_manager = YTManager()
-    songs_paths = yt_manager.download(urls)
-
-    # update songs localpath in DB
-    execution_model.song_1 = songs_paths[0]
-    execution_model.song_2 = songs_paths[1]
-    execution_model.state = STATUS.IN_PROGRESS
-    execution_model.save()
-
-    # call the backend logic
-    out_path = start(songs_paths)
-
-    # save the algorithm results to DB
-    execution_model.result = out_path
-    execution_model.state = STATUS.DONE
-    execution_model.save()
+controller = Controller()
 
 
 def index(request):
     # TODO: here we need to return the UI main page
     return HttpResponse("Hello, world. You're at the Alpha Numeric Sounds index.")
+
 
 @api_view(['POST'])
 def add_songs_from_url(request: HttpRequest):
@@ -51,9 +32,10 @@ def add_songs_from_url(request: HttpRequest):
     }
     """
     class Content(BasicContent):
-        msg = ""
-        error = ""
-        id = None
+        def __init__(self):
+            self.msg = ""
+            self.error = ""
+            self.id = None
 
     response = HttpResponse(content_type="application/json")
     content = Content()
@@ -65,7 +47,7 @@ def add_songs_from_url(request: HttpRequest):
         execution.save()
         content.id = execution.identifier
 
-        # TODO: add context manager logic to execute run_algo() asynchronously
+        controller.start_exec(urls, ea_params, execution)
 
         response.status_code = 200
         content.msg = "ok. starting to fetch audio data from urls"
@@ -84,25 +66,36 @@ def poll_updates(request, exec_id):
     Request format: {}
     """
     class Content(BasicContent):
-        status = ""
-        percentage = None
-        error = ""
+        def __init__(self):
+            self.exec_id = ""
+            self.status = ""
+            self.isReady = False
+            self.file64 = ""
+            self.error = ""
 
     response = HttpResponse(content_type="application/json")
+    response.status_code = 200
     content = Content()
     try:
 
-        # TODO: insert polling logic here
+        # get data on execution with exec_id from DB
+        exec_model = Execution.objects.get(identifier=exec_id)
+        content.exec_id = exec_model.identifier
+        content.status = exec_model.state
 
-        response.status_code = 200
-        content.status = STATUS.IN_PROGRESS
-        content.percentage = 60
+        if exec_model.state == STATUS.DONE:
+            # return the response with encoded file
+            # with exec_model.result.open("rb")as f:
+            #     content.file64 = b64encode(f.read()).decode('utf-8')
+            content.isReady = True
 
     except Exception as e:
         response.status_code = 404
         content.status = STATUS.ERROR
-        content.percentage = -1
         content.error = e
+        content.isReady = False
+        if content.file64:
+            content.file64 = ""
 
     response.write(content.as_json())
     return response
