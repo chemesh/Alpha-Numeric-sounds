@@ -41,8 +41,9 @@ def add_songs_from_url(request: HttpRequest):
     content = Content()
     try:
         # urls = csv_to_list(request.GET['urls'])
-        urls = json.loads(request.GET['urls'])
-        ea_params = json.loads(request.GET['advanced'])
+        data = json.loads(request.body)
+        urls = data['urls']
+        ea_params = data['advanced']
         execution = Execution(identifier=uuid.uuid4(), timestamp=datetime.now(), state=STATUS.INIT)
         execution.save()
         content.id = str(execution.identifier)
