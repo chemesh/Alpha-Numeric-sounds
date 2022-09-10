@@ -7,6 +7,7 @@ import Source.utils.SoundUtils as su
 from Source.utils.DataModels import SongPool, Song
 from Source.utils.Logger import Logger
 from Source.utils.Constants import POPULATION_SIZE, TOURNSIZE_PERCENT, CROSSOVER_PROBABILITY, MUTATION_PROBABILITY, SAMPLERATE
+import Source.utils.Raters as raters
 
 
 class EA_Engine(object):
@@ -26,8 +27,11 @@ class EA_Engine(object):
         def _init_method_list(cls):
             cls.method_list = [func for func in dir(cls) if callable(getattr(cls, func)) and func.startswith("_sr")]
 
+        # ADD HERE THE SUB RATERS
+
         @staticmethod
         def _sr1(individual):
+            return raters.sub_rater_neighboring_pitch()
             return random.random()
 
         @staticmethod

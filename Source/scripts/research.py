@@ -26,26 +26,47 @@ def main():
     # y1, sr1 = librosa.load(WAV_FILE_TEST, duration=30)
     # y1, sr1 = librosa.load(f'{consts.INPUT_FOLDER}/lovestory.wav', duration=60)
     log = logger.Logger()
-    y1, sr1 = librosa.load(f'{consts.INPUT_FOLDER}/Lola-Marsh-Only-For-A-Moment.wav', duration=183)
+    y1, sr1 = librosa.load(f'{consts.INPUT_FOLDER}/Lola-Marsh-Only-For-A-Moment.wav', duration=120)
     timed_segs, bkps = su.break_to_timed_segments(y1, sr1)
-    key = su.extract_key(y1, sr1)
-    log.info(f'found key: {key}')
     print('segments ', timed_segs.shape)
-    tempo, beat_track = librosa.beat.beat_track(timed_segs[1], sr1)
-    log.info('trying to extract frequencies for chords...')
-    layers_of_2nd_seg = su.separate_voices(timed_segs[1])
-    print(f'extract voices return {layers_of_2nd_seg.keys()}')
-    #layers_of_2nd_seg = su.slice_to_audio_layers(timed_segs[2], sr1)
-    notes, n_fft = su.extract_notes(layers_of_2nd_seg[INSTRUMENT.VOCALS.value], beat_track)
-    key = su.extract_key(layers_of_2nd_seg[INSTRUMENT.VOCALS.value], sr1)
-    log.info(f'key found is: {key}')
-    rms = librosa.feature.rms(layers_of_2nd_seg[INSTRUMENT.VOCALS.value], frame_length=n_fft)
-    log.info(f'rms found: {rms}, with shape {rms.shape}')
-    #notes = [list(map(su.to_mingus_form, notes)) for note in notes if type(note) != str and note is not None]
-    first_rate = rate.sub_rater_neighboring_pitch(notes)
-    log.info(f'neighboring pitch rating of vocals of second segment: {first_rate}')
-    second_rate = rate.sub_rater_notes_in_key(notes, key)
-    log.info(f'num of notes in key rating of vocals of second segment: {first_rate}')
+    print(f'shape of y1: {y1.shape}')
+    i = 0
+    for seg in timed_segs:
+        bpm, beat_track = librosa.beat.beat_track(seg, sr1)
+        seg_layers = su.separate_voices(seg)
+        vocal_notes, _ = su.extract_notes(seg_layers[INSTRUMENT.VOCALS.value], beat_track)
+        piano_notes, _ = su.extract_notes(seg_layers[INSTRUMENT.PIANO.value], beat_track)
+        rate1 = (rate.sub_rater_neighboring_pitch(vocal_notes) + rate.sub_rater_neighboring_pitch(piano_notes))/3
+        vocals_key = su.extract_key(seg_layers[INSTRUMENT.VOCALS.value], sr1)
+        rate2 = rate.sub_rater_notes_in_key(vocal_notes, vocals_key)
+        log.info(f'avg rate of iteration: {(2*rate1+rate2)/2}')
+        sf.write(f"{consts.INPUT_FOLDER}/onlyforamoment-{i}-vocals.wav", seg_layers[INSTRUMENT.VOCALS.value], sr1)
+        sf.write(f"{consts.INPUT_FOLDER}/onlyforamoment-{i}-piano.wav", seg_layers[INSTRUMENT.PIANO.value], sr1)
+        log.info('========================================= FINISHED ITER =============================================')
+        i += 1
+
+
+
+
+
+    # tempo, beat_track = librosa.beat.beat_track(timed_segs[1], sr1)
+    # key = su.extract_key(y1, sr1)
+    # log.info(f'found key: {key}')
+    # print('segments ', timed_segs.shape)
+    # log.info('trying to extract frequencies for chords...')
+    # layers_of_2nd_seg = su.separate_voices(timed_segs[1])
+    # print(f'extract voices return {layers_of_2nd_seg.keys()}')
+    # #layers_of_2nd_seg = su.slice_to_audio_layers(timed_segs[2], sr1)
+    # notes, n_fft = su.extract_notes(layers_of_2nd_seg[INSTRUMENT.VOCALS.value], beat_track)
+    # key = su.extract_key(layers_of_2nd_seg[INSTRUMENT.VOCALS.value], sr1)
+    # log.info(f'key found is: {key}')
+    # rms = librosa.feature.rms(layers_of_2nd_seg[INSTRUMENT.VOCALS.value], frame_length=n_fft)
+    # log.info(f'rms found: {rms}, with shape {rms.shape}')
+    # #notes = [list(map(su.to_mingus_form, notes)) for note in notes if type(note) != str and note is not None]
+    # first_rate = rate.sub_rater_neighboring_pitch(notes)
+    # log.info(f'neighboring pitch rating of vocals of second segment: {first_rate}')
+    # second_rate = rate.sub_rater_notes_in_key(notes, key)
+    # log.info(f'num of notes in key rating of vocals of second segment: {second_rate}')
     # sf.write(f"{consts.INPUT_FOLDER}/guess_who_mono.wav", layers_of_2nd_seg[0][0], sr1)
 
     # bkps = su.partition(y1, sr1, 10)

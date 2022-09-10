@@ -10,15 +10,27 @@ class Song(object):
         self.sr = sr
         self._tempo = None
         self._beat_frames = None
+        self._segments_time_bkps = None
+        self._key = None
 
     def _get_tempobeat(self):
         self._tempo, self._beat_frames = librosa.beat.beat_track(y=self.data, sr=self.sr)
+
+    def _get_bkps(self):
+        _, self._segments_time_bkps = su.break_to_timed_segments(self.data)
 
     def to_librosa_model(self):
         pass
 
     def to_paa_model(self):
         pass
+
+    def _get_key(self):
+        self._key = su.extract_key(self.data, self.sr)
+
+    @property
+    def data(self):
+        return self.data
 
     @property
     def tempo(self):
@@ -35,6 +47,28 @@ class Song(object):
     @property
     def beat_times(self):
         return librosa.frames_to_time(self.beat_frames, sr=self.sr)
+
+    @property
+    def segments_time_bkps(self):
+        if not self._segments_time_bkps:
+            self._get_bkps()
+        return self._segments_time_bkps
+
+    @property
+    def key(self) -> str:
+        if not self._key:
+            self._get_key()
+        return self._key
+
+    @tempo.setter
+    def tempo(self, value):
+        self._tempo = value
+        return self._tempo
+
+    @data.setter
+    def data(self, value):
+        self._tempo = value
+        return self._tempo
 
     @staticmethod
     def from_wav_file(path: str, sr: int = 22050, duration: float = None):

@@ -19,7 +19,7 @@ def sub_rater_neighboring_pitch(notes: np.ndarray, need_mingus_conversion:bool =
                 count_crazy_notes += 1
     print(f'counted {count_crazy_notes} crazy notes out of {len(mingus_notes)} notes a.i.a')
     #2DO think wether this should be (Ans) ot (1-Ans)
-    return count_crazy_notes/len(mingus_notes)
+    return 1-count_crazy_notes/len(mingus_notes)
 
 def sub_rater_notes_density_diversity(notes: np.ndarray):
     """
@@ -37,7 +37,10 @@ def sub_rater_notes_in_key(notes: np.ndarray, key):
     count_all_notes = 0
     for note in notes:
         if note is not None:
-            count_all_notes += len(note)
+            note = [su.to_mingus_form(x) for x in note]
+            key = su.to_librosa_key(key)
             key_notes = librosa.key_to_notes(key)
-            count_in_key += sum(x in key for x in note)
-    return 1 - count_in_key/count_all_notes
+            if None not in note:
+                count_all_notes += len(note)
+                count_in_key += sum(1 for nt in note if nt.name in key_notes)
+    return count_in_key/count_all_notes

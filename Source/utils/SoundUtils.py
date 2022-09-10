@@ -13,6 +13,66 @@ from Source.utils.Constants import MAX_BKPS, INPUT_FOLDER
 from Source.utils.keydin import pitchdistribution as pd, classifiers
 import re
 from mingus.containers import Note
+import mingus.core.intervals as intervals
+from Source.utils.DataModels import Song
+
+# TODOp:
+#  adjust BPM of all individuals! (stretch all to max / smoosh all to min with given probability)
+#  adjust pitch!
+#
+
+def adjust_bpm(song1:Song, song2:Song):
+    """
+    if songs tempo doesn't match, speeds up the "slower" one to match the "faster"
+    """
+    bpm1 = song1.tempo
+    bpm2 = song2.tempo
+    if bpm1 > bpm2:
+        song2.data = librosa.effects.time_stretch(song2.data, bpm1/bpm2)
+    elif bpm2 > bpm1:
+        song1.data = librosa.effects.time_stretch(song1.data, bpm2/bpm1)
+    return
+
+
+def adjust_pitch(song1:Song, song2:Song):
+    if song1.key == song2.key:
+        return
+    maj = 'maj'
+    min = 'min'
+    first_clean_key = song1.key.split(' ')[0]
+    second_clean_key = song2.key.split(' ')[0]
+    if (maj in song1.key and maj in song2.key) or (min in song1.key and min in song2.key):
+        if first_clean_key > second_clean_key:
+            delta = intervals.measure(second_clean_key, first_clean_key)
+            smaller = 'second'
+        else:
+            delta = intervals.measure(first_clean_key, second_clean_key)
+            smaller = 'first'
+    else:
+        if min in song1.key:
+            equiv_key, _ = find_equivalent_key_chord(first_clean_key, min)
+        else:
+            equiv_key, _ = find_equivalent_key_chord(second_clean_key, min)
+        if first_clean_key > second_clean_key:
+            delta = intervals.measure(equiv_key, second_clean_key)
+            smaller = 'second'
+        else:
+            delta = intervals.measure(second_clean_key, equiv_key)
+            smaller = 'first'
+
+    if smaller == 'first':
+        song1.data = librosa.effects.pitch_shift(song1.data, delta)
+    else:
+        song2.data = librosa.effects.pitch_shift(song2.data, delta)
+
+
+def find_equivalent_key_chord(key: str, chord: str) -> (str, str):
+    """
+    key: 'C', 'A', 'F#', etc...
+    chord: 'major' or 'minor'
+    returns the equivalent key in the opposing chord
+    """
+    return key, chord
 
 
 class INSTRUMENT(enum.Enum):
@@ -122,7 +182,8 @@ def extract_voice(data: np.ndarray, sr: int, inst: INSTRUMENT) -> Tuple[np.ndarr
 
 
 def ms_to_frame(ts: int, sr: int):
-    return sr * ts // 1000
+    print(f'{sr} * {ts} // 1000 = {sr // 1000 * ts}')
+    return sr // 1000 * ts
 
 
 def overlay(
@@ -211,7 +272,7 @@ def optimal_bkps(bkps_costs: List) -> int:
             max_angle = angle
             max_pos = bkp_pos
             # print(f"max_pos: {max_pos}, max_angle: {max_angle}")
-    return max_pos
+    return max_pos + 1
 
 
 def compute_angle(x1, y1, x2, y2, x3, y3):
@@ -291,10 +352,10 @@ def break_to_timed_segments(data: np.ndarray, sr: int, n_bkps_max: int = 10) -> 
     print(f"bkps: {bkps}")
     i = 0
     rocks = np.empty([len(bkps) - 1], dtype=np.ndarray)
-    print('BREAKING IT DOWN:')
+    #print('BREAKING IT DOWN:')
     for bkp1, bkp2 in zip(bkps[:-1], bkps[1:]):
         t1, t2 = ms_to_frame(bkp1, sr), ms_to_frame(bkp2, sr)
-        print(f'current t, t2 = {t1}, {t2}')
+        #print(f'current t, t2 = {t1}, {t2}')
         rocks[i] = data[t1:t2]
         i += 1
     print(f'num of segments = {i-1}')
@@ -339,13 +400,18 @@ def calc_win_length_by_beat_track(bit_track: np.ndarray):
     return librosa.frames_to_samples(round((first_space + mid_space + last_space)/3))
 
 
+def to_librosa_key(key:str):
+    key = re.sub(r'\s+', r':', key)
+    return key.replace('minor', 'min').replace('major', 'maj')
+
+
 def extract_notes(data: np.ndarray, corresponding_beat_drops: np.ndarray, sr: int=22050):
     logger = log()
     # we want stft windows numbered as bit frames
     win_length = calc_win_length_by_beat_track(corresponding_beat_drops)
     logger.info(f'calculated win_length of {win_length}')
     corr_frequencies = librosa.fft_frequencies(sr=sr, n_fft=win_length)
-    logger.info(f'corresponding frequencies: {corr_frequencies}')
+    #logger.info(f'corresponding frequencies: {corr_frequencies}')
     freq_domain = librosa.stft(data, n_fft=win_length, hop_length=round(3*win_length/4))
     freqs_list = np.empty([freq_domain.shape[0]], dtype=np.ndarray)
     notes_list = np.empty([freq_domain.shape[0]], dtype=np.ndarray)
@@ -355,17 +421,17 @@ def extract_notes(data: np.ndarray, corresponding_beat_drops: np.ndarray, sr: in
         for beat_frame_freqs in freq_domain:
             i = 0
             idx_keeper = 0
-            logger.info('filtering out non-dominant frequencies...')
+            #logger.info('filtering out non-dominant frequencies...')
             min_freq = 4 * (np.max(beat_frame_freqs)) / 5
             only_true_idxs = np.where(beat_frame_freqs >= min_freq)
             freqs_list[j] = np.empty([len(only_true_idxs[0])], dtype=np.float32)
             for idx in only_true_idxs[0]:
-                logger.info('transcribing index to frequency..')
+                #logger.info('transcribing index to frequency..')
                 freqs_list[j][i] = corr_frequencies[idx]
                 i += 1
                 idx_keeper = idx
             notes_list[j] = librosa.hz_to_note(freqs_list[j]) if 0 not in only_true_idxs[0] else None
-            logger.info(f'current notes: {notes_list[j]}')
+            #logger.info(f'current notes: {notes_list[j]}')
             j += 1
     except Exception as e:
         logger.error(f'FELL ON (black days...): i = {i-1}, j = {j-1}, idx = {idx_keeper}, value = {corr_frequencies[idx_keeper]}\nError: {e.__str__()}')
