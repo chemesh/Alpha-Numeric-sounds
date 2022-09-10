@@ -12,7 +12,7 @@ from app.app_utils import STATUS
 
 
 class Controller:
-    logger = Logger
+    logger = Logger()
     engine = EA_Engine(logger)
     process_list = {}
 
