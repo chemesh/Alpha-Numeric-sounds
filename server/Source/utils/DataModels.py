@@ -1,12 +1,12 @@
 import librosa
 import numpy as np
-import Source.utils.SoundUtils as su
+import server.Source.utils.SoundUtils as su
 
 
 class Song(object):
 
     def __init__(self, data: np.ndarray, sr: int = 22050):
-        self._data = data
+        self._data = librosa.effects.trim(data)
         self.sr = sr
         self._tempo = None
         self._beat_frames = None

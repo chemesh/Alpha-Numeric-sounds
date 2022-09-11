@@ -3,11 +3,11 @@ import random
 import deap.algorithms as dpa
 from deap import base, creator, tools
 
-import Source.utils.SoundUtils as su
-from Source.utils.DataModels import SongPool, Song
-from Source.utils.Logger import Logger
-from Source.utils.Constants import POPULATION_SIZE, TOURNSIZE_PERCENT, CROSSOVER_PROBABILITY, MUTATION_PROBABILITY, SAMPLERATE
-import Source.utils.Raters as raters
+import server.Source.utils.SoundUtils as su
+from server.Source.utils.DataModels import SongPool, Song
+from server.Source.utils.Logger import Logger
+from server.Source.utils.Constants import POPULATION_SIZE, TOURNSIZE_PERCENT, CROSSOVER_PROBABILITY, MUTATION_PROBABILITY, SAMPLERATE
+import server.Source.utils.Raters as raters
 
 
 class EA_Engine(object):
@@ -17,8 +17,6 @@ class EA_Engine(object):
 
         @classmethod
         def rate(cls, individual):
-            # todo: consider calling methods in different threads for more efficiency
-            # todo: find a way to create 'method_list' one time only at the initialization
             if not cls.method_list:
                 cls._init_method_list()
             return (sum([getattr(cls, method)(individual) for method in cls.method_list]) / len(cls.method_list),)
@@ -77,17 +75,6 @@ class EA_Engine(object):
         s = su.rand_reconstruct(ind1.data, ind1.sr, ind2.data, ind2.sr, inst=inst)
         return creator.Individual(data=s, sr=SAMPLERATE)
 
-    @staticmethod
-    def _get_bkps(num_of_bkps, gens):
-        if num_of_bkps > 0:
-            bkps = set()
-            coef = gens / num_of_bkps
-            for i in range(num_of_bkps):
-                bkps.add(i * coef)
-            return bkps
-        else:
-            return None
-
     def _calculate_fitness_values(self, population):
         # calculate fitness tuple for each individual in the population:
         fitness_values = list(map(self.toolbox.evaluate, population))
@@ -107,14 +94,14 @@ class EA_Engine(object):
             mutation_prob=MUTATION_PROBABILITY,
             crossover_prob=CROSSOVER_PROBABILITY):
 
-        self.song_pool.add(*songs)
+        su.adjust_bpm(songs[0], songs[1])
+        su.adjust_pitch(songs[0], songs[1])
 
+        self.song_pool.add(*songs)
         # create initial population (generation 0):
         population = self.toolbox.population_creator(n=popsize)
         gen_counter = 0
 
-        # set which generations should  mark a break point in the mixing executions
-        # todo: implement logic for returning on breakpoints
         bkps = self._get_bkps(num_of_bkps, max_gens)
 
         final_pop, logbook = dpa.eaMuPlusLambda(

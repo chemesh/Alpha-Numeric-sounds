@@ -52,14 +52,15 @@ def adjust_bpm(song1: data_model.Song, song2: data_model.Song):
     """
     bpm1 = song1.tempo
     bpm2 = song2.tempo
-    if bpm1 > bpm2:
+    smoosh = random.choice(True, False)
+    if (bpm1 > bpm2 and smoosh) or (bpm2 > bpm1 and not smoosh):
         song2.data = librosa.effects.time_stretch(song2.data, bpm1/bpm2)
-    elif bpm2 > bpm1:
+    else:
         song1.data = librosa.effects.time_stretch(song1.data, bpm2/bpm1)
     return
 
 
-def adjust_pitch(song1:data_model.Song, song2:data_model.Song):
+def adjust_pitch(song1: data_model.Song, song2: data_model.Song):
     if song1.key == song2.key:
         return
     maj = 'maj'
@@ -377,18 +378,18 @@ def partition(data: np.ndarray, samplerate: int, n_bkps_max: int, hop_length: in
     return bkps_times
 
 
-def break_to_timed_segments(data: np.ndarray, sr: int, n_bkps_max: int = 10) -> np.ndarray:
+def break_to_timed_segments(data: np.ndarray, sr: int, n_bkps_max: int = 10,
+                            return_indi_segments: bool = True, return_bkps_as_frames: bool = False) -> np.ndarray:
     bkps = partition(data, sr, n_bkps_max, in_ms=True)
-    print(f"bkps: {bkps}")
-    i = 0
-    rocks = np.empty([len(bkps) - 1], dtype=np.ndarray)
-    #print('BREAKING IT DOWN:')
-    for bkp1, bkp2 in zip(bkps[:-1], bkps[1:]):
-        t1, t2 = ms_to_frame(bkp1, sr), ms_to_frame(bkp2, sr)
-        #print(f'current t, t2 = {t1}, {t2}')
-        rocks[i] = data[t1:t2]
-        i += 1
-    print(f'num of segments = {i}')
+    rocks = None
+    if return_indi_segments:
+        i = 0
+        rocks = np.empty([len(bkps) - 1], dtype=np.ndarray)
+        for bkp1, bkp2 in zip(bkps[:-1], bkps[1:]):
+            t1, t2 = ms_to_frame(bkp1, sr), ms_to_frame(bkp2, sr)
+            rocks[i] = data[t1:t2]
+            i += 1
+    bkps = [ms_to_frame(bkp) for bkp in bkps] if return_bkps_as_frames else bkps
     return rocks, bkps
 
 
