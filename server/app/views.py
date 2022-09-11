@@ -1,7 +1,9 @@
 import json
 import uuid
+from base64 import b64encode
 
 from datetime import datetime
+from django.db import transaction, connections
 from rest_framework.decorators import api_view
 from django.http import HttpResponse, HttpRequest
 from app.app_utils import csv_to_list, STATUS, BasicContent
@@ -16,6 +18,7 @@ def index(request):
     return HttpResponse("Hello, world. You're at the Alpha Numeric Sounds index.")
 
 
+@transaction.non_atomic_requests
 @api_view(['POST'])
 def add_songs_from_url(request: HttpRequest):
     """
@@ -86,9 +89,10 @@ def poll_updates(request, exec_id):
 
         if exec_model.state == STATUS.DONE:
             # return the response with encoded file
-            # with exec_model.result.open("rb")as f:
-            #     content.file64 = b64encode(f.read()).decode('utf-8')
+            with exec_model.result.open("rb")as f:
+                content.file64 = str(b64encode(f.read()).decode('utf-8'))
             content.isReady = True
+            exec_model.delete()
 
     except Exception as e:
         response.status_code = 404

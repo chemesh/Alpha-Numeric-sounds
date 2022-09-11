@@ -9,6 +9,9 @@ from Source.scripts.EA_Engine import EA_Engine
 from Source.utils.DataModels import Song
 from app.integrations.youtube_manager import YTManager
 from app.app_utils import STATUS
+import django
+django.setup()
+from app.models import Execution
 
 
 class Controller:
@@ -16,8 +19,7 @@ class Controller:
     engine = EA_Engine(logger)
     process_list = {}
 
-    def start_exec(self, urls, params, execution_model):
-        exec_id = execution_model.identifier
+    def start_exec(self, urls, params, exec_id):
 
         try:
             self.logger.info(f"creating process with execution {exec_id}")

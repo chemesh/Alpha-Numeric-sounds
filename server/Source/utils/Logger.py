@@ -1,8 +1,9 @@
+import os
 from pathlib import Path
 from datetime import datetime
 import sys
 
-LOG_FOLDER_PATH = "../logs"
+LOG_FOLDER_PATH = "./logs"
 LOG_DIRECTORY_FORMAT = "%Y/%m/%d,%H"
 LOG_FILENAME_FORMAT = "%Y%m%d_%H"
 
@@ -26,6 +27,7 @@ class Logger(object):
     """
     def __init__(self):
         self._logs_folder = Path(LOG_FOLDER_PATH)
+        self.info(f"logs folder path: {os.path.abspath(LOG_FOLDER_PATH)}")
 
     def _record(self, msg: str, timestamp: datetime) -> None:
         """
