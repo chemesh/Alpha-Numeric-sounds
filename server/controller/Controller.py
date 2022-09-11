@@ -53,6 +53,7 @@ class Controller:
 
             # Backend logic
             # songs = [Song.from_wav_file(path) for path in songs_paths]
+            ## verify params extraction from UI
             # results = self.engine.mix(*songs, **params)
             # file_path = os.path.join(OUTPUT_FOLDER, f"result_{execution_model.identifier}")
             # sf.write(f"{file_path}.wav", results[0].data, results[0].sr)

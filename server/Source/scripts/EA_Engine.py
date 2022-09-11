@@ -100,12 +100,11 @@ class EA_Engine(object):
     def mix(
             self,
             *songs: Song,
-            max_gens=10,
-            num_of_bkps=0,
-            popsize=POPULATION_SIZE,
-            tournsize_p=TOURNSIZE_PERCENT,
-            mutation_prob=MUTATION_PROBABILITY,
-            crossover_prob=CROSSOVER_PROBABILITY):
+            max_gens,
+            popsize,
+            selection_p,
+            mutation_prob,
+            crossover_prob):
 
         self.song_pool.add(*songs)
 
@@ -113,9 +112,6 @@ class EA_Engine(object):
         population = self.toolbox.population_creator(n=popsize)
         gen_counter = 0
 
-        # set which generations should  mark a break point in the mixing executions
-        # todo: implement logic for returning on breakpoints
-        bkps = self._get_bkps(num_of_bkps, max_gens)
 
         final_pop, logbook = dpa.eaMuPlusLambda(
             population=population,
