@@ -6,19 +6,31 @@ import Source.utils.SoundUtils as su
 class Song(object):
 
     def __init__(self, data: np.ndarray, sr: int = 22050):
-        self.data = data
+        self._data = data
         self.sr = sr
         self._tempo = None
         self._beat_frames = None
+        self._segments_time_bkps = None
+        self._key = None
 
     def _get_tempobeat(self):
-        self._tempo, self._beat_frames = librosa.beat.beat_track(y=self.data, sr=self.sr)
+        self._tempo, self._beat_frames = librosa.beat.beat_track(y=self._data, sr=self.sr)
+
+    def _get_bkps(self):
+        _, self._segments_time_bkps = su.break_to_timed_segments(self._data)
 
     def to_librosa_model(self):
         pass
 
     def to_paa_model(self):
         pass
+
+    def _get_key(self):
+        self._key = su.extract_key(self._data, self.sr)
+
+    @property
+    def data(self):
+        return self._data
 
     @property
     def tempo(self):
@@ -35,6 +47,28 @@ class Song(object):
     @property
     def beat_times(self):
         return librosa.frames_to_time(self.beat_frames, sr=self.sr)
+
+    @property
+    def segments_time_bkps(self):
+        if not self._segments_time_bkps:
+            self._get_bkps()
+        return self._segments_time_bkps
+
+    @property
+    def key(self) -> str:
+        if not self._key:
+            self._get_key()
+        return self._key
+
+    @tempo.setter
+    def tempo(self, value):
+        self._tempo = value
+        return
+
+    @data.setter
+    def data(self, value):
+        self._data = value
+        return
 
     @staticmethod
     def from_wav_file(path: str, sr: int = 22050, duration: float = None):

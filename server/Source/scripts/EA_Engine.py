@@ -7,6 +7,7 @@ import Source.utils.SoundUtils as su
 from Source.utils.DataModels import SongPool, Song
 from Source.utils.Logger import Logger
 from Source.utils.Constants import POPULATION_SIZE, TOURNSIZE_PERCENT, CROSSOVER_PROBABILITY, MUTATION_PROBABILITY, SAMPLERATE
+import Source.utils.Raters as raters
 
 
 class EA_Engine(object):
@@ -26,18 +27,28 @@ class EA_Engine(object):
         def _init_method_list(cls):
             cls.method_list = [func for func in dir(cls) if callable(getattr(cls, func)) and func.startswith("_sr")]
 
+        # ADD HERE THE SUB RATERS
+
         @staticmethod
         def _sr1(individual):
+            # get timed segments
+            # split each to layers
+            # rate piano and vocals (for each seg) with neigh_pitch
+            # return average
+            return raters.sub_rater_neighboring_pitch()
             return random.random()
 
         @staticmethod
         def _sr2(individual):
-            return random.random()
+            # get timed segments
+            # split each to layers
+            # rate vocals by notes in key
+            return raters.sub_rater_notes_in_key()
 
-    def __init__(self, logger: Logger=None):
+    def __init__(self, logger: Logger):
         self.toolbox = base.Toolbox()
         self.song_pool = SongPool()
-        # self.logger = logger
+        self.logger = logger
 
         creator.create("Fitness_test", base.Fitness, weights=(1.0,))
         # creator.create("Individual", object, sr=int, raw_data=np.ndarray, fitness=Fitness)
@@ -93,7 +104,6 @@ class EA_Engine(object):
             num_of_bkps=0,
             popsize=POPULATION_SIZE,
             tournsize_p=TOURNSIZE_PERCENT,
-            selection_p=None,
             mutation_prob=MUTATION_PROBABILITY,
             crossover_prob=CROSSOVER_PROBABILITY):
 
