@@ -10,7 +10,6 @@ from app.app_utils import csv_to_list, STATUS, BasicContent
 from .models import Execution
 from controller.Controller import Controller
 from django.views.decorators.csrf import csrf_exempt
-from app.service import create_content_from_result
 
 controller = Controller()
 
@@ -106,11 +105,16 @@ def poll_updates(request, exec_id):
                 content.file64 = str(b64encode(f.read()).decode('utf-8'))
             content.isReady = True
             exec_model.delete()
+        elif exec_model.state == STATUS.ERROR:
+            exec_model.delete()
+            raise Exception("An error occurred during the execution of the program..."
+                            "Please check server logs for more information."
+                            f"Deleting entry for execution {exec_id}. Please try again later")
 
     except Exception as e:
         response.status_code = 404
         content.status = STATUS.ERROR
-        content.error = e
+        content.error = str(e.with_traceback())
         content.isReady = False
         if content.file64:
             content.file64 = ""

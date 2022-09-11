@@ -58,7 +58,7 @@ class Controller:
             # sf.write(f"{file_path}.wav", results[0].data, results[0].sr)
 
             # for testing only
-            file_path = "C:\\Users\\roy12\\PycharmProjects\\AlphaNumericSounds\\server\\resources\\AD-FinalCountdown_pt2.wav"
+            file_path = songs_paths[0]
 
             # save the algorithm results to DB
             execution_model.result = file_path
@@ -67,6 +67,7 @@ class Controller:
 
         except Exception as e:
             execution_model.state = STATUS.ERROR
+            execution_model.save()
             self.logger.error(e)
             self.logger.error(traceback.format_exc())
 
