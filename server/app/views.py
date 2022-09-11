@@ -9,6 +9,8 @@ from django.http import HttpResponse, HttpRequest
 from app.app_utils import csv_to_list, STATUS, BasicContent
 from .models import Execution
 from controller.Controller import Controller
+from django.views.decorators.csrf import csrf_exempt
+from app.service import create_content_from_result
 
 controller = Controller()
 
@@ -18,6 +20,7 @@ def index(request):
     return HttpResponse("Hello, world. You're at the Alpha Numeric Sounds index.")
 
 
+@csrf_exempt
 @transaction.non_atomic_requests
 @api_view(['POST'])
 def add_songs_from_url(request: HttpRequest):
@@ -92,7 +95,6 @@ def poll_updates(request, exec_id):
     response.status_code = 200
     content = Content()
     try:
-
         # get data on execution with exec_id from DB
         exec_model = Execution.objects.get(identifier=exec_id)
         content.id = exec_model.identifier
