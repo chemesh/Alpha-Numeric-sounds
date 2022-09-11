@@ -13,7 +13,7 @@ def sub_rater_neighboring_pitch(notes: np.ndarray, need_mingus_conversion:bool =
     notes = [x[0] for x in notes if x is not None]
     mingus_notes = list(map(su.to_mingus_form, notes)) if need_mingus_conversion else notes
     count_crazy_notes = 0
-    for note1, note2 in zip(mingus_notes[:-1],mingus_notes[1:]):
+    for note1, note2 in zip(mingus_notes[:-1], mingus_notes[1:]):
         if note1 is not None and note2 is not None:
             if abs(note2.octave-note1.octave) >= 2:
                 count_crazy_notes += 1

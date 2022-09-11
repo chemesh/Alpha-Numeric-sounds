@@ -31,12 +31,19 @@ class EA_Engine(object):
 
         @staticmethod
         def _sr1(individual):
+            # get timed segments
+            # split each to layers
+            # rate piano and vocals (for each seg) with neigh_pitch
+            # return average
             return raters.sub_rater_neighboring_pitch()
             return random.random()
 
         @staticmethod
         def _sr2(individual):
-            return random.random()
+            # get timed segments
+            # split each to layers
+            # rate vocals by notes in key
+            return raters.sub_rater_notes_in_key()
 
     def __init__(self, logger: Logger):
         self.toolbox = base.Toolbox()

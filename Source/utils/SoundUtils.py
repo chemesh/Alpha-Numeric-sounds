@@ -16,7 +16,7 @@ from spleeter.separator import Separator
 from Source.utils.Logger import Logger as log
 from Source.utils.Constants import MAX_BKPS, INPUT_FOLDER
 from Source.utils.keydin import pitchdistribution as pd, classifiers
-from Source.utils.DataModels import Song
+import Source.utils.DataModels as data_model
 
 
 
@@ -45,7 +45,8 @@ KEYS = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#']
 #  adjust pitch!
 #
 
-def adjust_bpm(song1:Song, song2:Song):
+
+def adjust_bpm(song1: data_model.Song, song2: data_model.Song):
     """
     if songs tempo doesn't match, speeds up the "slower" one to match the "faster"
     """
@@ -58,7 +59,7 @@ def adjust_bpm(song1:Song, song2:Song):
     return
 
 
-def adjust_pitch(song1:Song, song2:Song):
+def adjust_pitch(song1:data_model.Song, song2:data_model.Song):
     if song1.key == song2.key:
         return
     maj = 'maj'
@@ -193,7 +194,7 @@ def extract_voice(data: np.ndarray, sr: int, inst: INSTRUMENT) -> Tuple[np.ndarr
     and second value is the original data without the extracted voice
     """
     voices = separate_voices(data)
-    voice_to_extract = voices.pop(inst)
+    voice_to_extract = voices.pop(inst.value)
 
     new_data = voices.popitem()[1]
     while voices:
@@ -264,10 +265,13 @@ def swap(
         inst2, back2 = extract_voice(data2, sr2, inst)
         part1 = combine(inst1, sr1, back2, sr2)
         part2 = combine(inst2, sr2, back1, sr1)
-
-    new_data1 = np.insert(np.delete(data1, slice(d1_start_idx, d1_end_idx)), d1_start_idx, part2)
-    new_data2 = np.insert(np.delete(data2, slice(d2_start_idx, d2_end_idx)), d2_start_idx, part1)
-    return new_data1, new_data2
+    try:
+        new_data1 = np.insert(np.delete(data1, slice(d1_start_idx, d1_end_idx)), d1_start_idx, part2)
+        new_data2 = np.insert(np.delete(data2, slice(d2_start_idx, d2_end_idx)), d2_start_idx, part1)
+        return new_data1, new_data2
+    except ValueError as e:
+        print(f'VALUE ERROR: data1.shape = {data1.shape},\ndata2.shape={data2.shape}\nd1_start_idx = {d1_start_idx}\nd2_start_idx = {d2_start_idx}')
+        exit(-1)
 
 
 def get_sum_of_cost(algo: rpt.KernelCPD, n_bkps: int) -> float:
@@ -308,7 +312,6 @@ def compute_angle(x1, y1, x2, y2, x3, y3):
     angl_tan = (m2 - m1) / (1 + m2 * m1)
     print(angl_tan)
     angle = math.atan(angl_tan)
-    #angle = np.degrees(np.arccos(np.dot(delta1, delta2) / (np.linalg.norm(delta1) * np.linalg.norm(delta2))))
     print(f"angle between n_bkps: {x1}, {x2}, {x3}: {angle}")
     return angle
 
@@ -361,12 +364,11 @@ def partition(data: np.ndarray, samplerate: int, n_bkps_max: int, hop_length: in
     bkps_costs = [get_sum_of_cost(algo=algo, n_bkps=n_bkps) for n_bkps in array_of_n_bkps]
     print(f'sum of cost array y values: {bkps_costs}')
 
-    n_bkps = 5
-    # n_bkps = optimal_bkps(bkps_costs)
+    n_bkps = optimal_bkps(bkps_costs)
     print(f"n_bkps: {n_bkps}")
 
     # Segmentation
-    bkps = algo.predict(n_bkps=n_bkps+1)   # HARD CODED ADDITION OF BKPS! Notice
+    bkps = algo.predict(n_bkps=n_bkps+1)
     # Convert the estimated change points (frame counts) to actual timestamps
     bkps_times = librosa.frames_to_time(bkps, sr=samplerate, hop_length=hop_length)
     if in_ms:
