@@ -257,22 +257,28 @@ def get_sum_of_cost(algo: rpt.KernelCPD, n_bkps: int) -> float:
 
 def optimal_bkps(bkps_costs: List) -> int:
     max_pos = 1
-    max_angle = None
+    max_curve = None
 
     for bkp_pos in range(1, len(bkps_costs) - 1):
         # given point b:(x_i,y_i), we will find the angle between a:(x_i-1,y_i-1) and c:(x-i+1,y_i+1)
         # going through point b
-        angle = compute_angle(bkp_pos - 1, bkps_costs[bkp_pos - 1],
+        curve = compute_curve(bkp_pos - 1, bkps_costs[bkp_pos - 1],
                               bkp_pos, bkps_costs[bkp_pos],
                               bkp_pos + 1, bkps_costs[bkp_pos + 1])
-        if not max_angle:
-            max_angle = angle
+        if not max_curve:
+            max_angle = curve
             continue
-        if angle < max_angle:
-            max_angle = angle
+        if curve > max_curve:
+            max_curve = curve
             max_pos = bkp_pos
             # print(f"max_pos: {max_pos}, max_angle: {max_angle}")
     return max_pos + 1
+
+
+def compute_curve(x1, y1, x2, y2, x3, y3):
+    first_decline = (y1 - y2) / (x1 - x2)
+    second_decline = (y2 - y3) / (x2 - x3)
+    return first_decline/second_decline
 
 
 def compute_angle(x1, y1, x2, y2, x3, y3):
@@ -334,7 +340,8 @@ def partition(data: np.ndarray, samplerate: int, n_bkps_max: int, hop_length: in
     bkps_costs = [get_sum_of_cost(algo=algo, n_bkps=n_bkps) for n_bkps in array_of_n_bkps]
     print(f'sum of cost array y values: {bkps_costs}')
 
-    n_bkps = optimal_bkps(bkps_costs)
+    n_bkps = 5
+    # n_bkps = optimal_bkps(bkps_costs)
     print(f"n_bkps: {n_bkps}")
 
     # Segmentation
@@ -358,7 +365,7 @@ def break_to_timed_segments(data: np.ndarray, sr: int, n_bkps_max: int = 10) -> 
         #print(f'current t, t2 = {t1}, {t2}')
         rocks[i] = data[t1:t2]
         i += 1
-    print(f'num of segments = {i-1}')
+    print(f'num of segments = {i}')
     return rocks, bkps
 
 
@@ -391,13 +398,14 @@ def to_mingus_form(note: str):
 
 
 def calc_win_length_by_beat_track(bit_track: np.ndarray):
+    bit_track = librosa.frames_to_samples(bit_track)
     beat_track_len = bit_track.shape[0]
     first_space = bit_track[2] - bit_track[1]
     mid_space = bit_track[round((beat_track_len/3)+1)] - \
                 bit_track[round(beat_track_len/3)]
     last_space = bit_track[round((2*beat_track_len/3)+1)] - \
                  bit_track[round(2*beat_track_len/3)]
-    return librosa.frames_to_samples(round((first_space + mid_space + last_space)/3))
+    return round((first_space + mid_space + last_space)/3)
 
 
 def to_librosa_key(key:str):
@@ -412,7 +420,7 @@ def extract_notes(data: np.ndarray, corresponding_beat_drops: np.ndarray, sr: in
     logger.info(f'calculated win_length of {win_length}')
     corr_frequencies = librosa.fft_frequencies(sr=sr, n_fft=win_length)
     #logger.info(f'corresponding frequencies: {corr_frequencies}')
-    freq_domain = librosa.stft(data, n_fft=win_length, hop_length=round(3*win_length/4))
+    freq_domain = librosa.stft(data, n_fft=win_length, hop_length=round(win_length))
     freqs_list = np.empty([freq_domain.shape[0]], dtype=np.ndarray)
     notes_list = np.empty([freq_domain.shape[0]], dtype=np.ndarray)
     #chords_list = np.empty([freq_domain.shape[0]], dtype=object)

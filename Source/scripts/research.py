@@ -26,22 +26,23 @@ def main():
     # y1, sr1 = librosa.load(WAV_FILE_TEST, duration=30)
     # y1, sr1 = librosa.load(f'{consts.INPUT_FOLDER}/lovestory.wav', duration=60)
     log = logger.Logger()
-    y1, sr1 = librosa.load(f'{consts.INPUT_FOLDER}/Lola-Marsh-Only-For-A-Moment.wav', duration=120)
-    timed_segs, bkps = su.break_to_timed_segments(y1, sr1)
+    y1, sr1 = librosa.load(f'{consts.INPUT_FOLDER}/thatslife.wav', duration=187)
+    timed_segs, bkps = su.break_to_timed_segments(y1, sr1, n_bkps_max=20)
+    print(f'BKPS ------ {bkps}')
     print('segments ', timed_segs.shape)
-    print(f'shape of y1: {y1.shape}')
     i = 0
     for seg in timed_segs:
+        log.info(f'beginning of iter: seg.shape = {seg.shape}')
         bpm, beat_track = librosa.beat.beat_track(seg, sr1)
         seg_layers = su.separate_voices(seg)
         vocal_notes, _ = su.extract_notes(seg_layers[INSTRUMENT.VOCALS.value], beat_track)
         piano_notes, _ = su.extract_notes(seg_layers[INSTRUMENT.PIANO.value], beat_track)
-        rate1 = (rate.sub_rater_neighboring_pitch(vocal_notes) + rate.sub_rater_neighboring_pitch(piano_notes))/3
+        rate1 = (rate.sub_rater_neighboring_pitch(vocal_notes) + rate.sub_rater_neighboring_pitch(piano_notes))/2
         vocals_key = su.extract_key(seg_layers[INSTRUMENT.VOCALS.value], sr1)
         rate2 = rate.sub_rater_notes_in_key(vocal_notes, vocals_key)
-        log.info(f'avg rate of iteration: {(2*rate1+rate2)/2}')
-        sf.write(f"{consts.INPUT_FOLDER}/onlyforamoment-{i}-vocals.wav", seg_layers[INSTRUMENT.VOCALS.value], sr1)
-        sf.write(f"{consts.INPUT_FOLDER}/onlyforamoment-{i}-piano.wav", seg_layers[INSTRUMENT.PIANO.value], sr1)
+        log.info(f'avg rate of iteration: {(rate1+rate2)/2}')
+        #sf.write(f"{consts.INPUT_FOLDER}/love-{i}-vocals.wav", seg_layers[INSTRUMENT.VOCALS.value], sr1)
+        #sf.write(f"{consts.INPUT_FOLDER}/love-{i}-piano.wav", seg_layers[INSTRUMENT.PIANO.value], sr1)
         log.info('========================================= FINISHED ITER =============================================')
         i += 1
 
