@@ -16,7 +16,7 @@ from spleeter.separator import Separator
 from server.Source.utils.Logger import Logger as log
 from server.Source.utils.Constants import MAX_BKPS, INPUT_FOLDER
 from server.Source.utils.keydin import pitchdistribution as pd, classifiers
-import server.Source.utils.DataModels as data_model
+# import server.Source.utils.DataModels as data_model
 
 
 
@@ -46,7 +46,7 @@ KEYS = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#']
 #
 
 
-def adjust_bpm(song1: data_model.Song, song2: data_model.Song):
+def adjust_bpm(song1, song2):
     """
     if songs tempo doesn't match, speeds up the "slower" one to match the "faster"
     """
@@ -59,7 +59,7 @@ def adjust_bpm(song1: data_model.Song, song2: data_model.Song):
     return
 
 
-def adjust_pitch(song1:data_model.Song, song2:data_model.Song):
+def adjust_pitch(song1, song2):
     if song1.key == song2.key:
         return
     maj = 'maj'
@@ -281,6 +281,8 @@ def get_sum_of_cost(algo: rpt.KernelCPD, n_bkps: int) -> float:
 
 
 def optimal_bkps(bkps_costs: List) -> int:
+
+    # TODO: MAKE SURE DOING LIBROSA.TRIM() DOESN'T FUCKS UP THE BKPS CALC (EVEN THO IT'S BETTER TO DO THE TRIM.... SHIR....)
     max_pos = 1
     max_curve = None
 
@@ -291,7 +293,7 @@ def optimal_bkps(bkps_costs: List) -> int:
                               bkp_pos, bkps_costs[bkp_pos],
                               bkp_pos + 1, bkps_costs[bkp_pos + 1])
         if not max_curve:
-            max_angle = curve
+            max_curve = curve
             continue
         if curve > max_curve:
             max_curve = curve
@@ -378,7 +380,7 @@ def partition(data: np.ndarray, samplerate: int, n_bkps_max: int, hop_length: in
 
 
 def get_max_bkps(tempo, duration_in_secs):
-    return math.ceil(tempo/duration_in_secs)
+    return math.ceil(duration_in_secs / tempo * 4)
 
 
 def break_to_timed_segments(data: np.ndarray, sr: int, n_bkps_max: int = 10) -> np.ndarray:
