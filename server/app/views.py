@@ -22,17 +22,27 @@ def index(request):
 @api_view(['POST'])
 def add_songs_from_url(request: HttpRequest):
     """
+    URL: https://[ip]:[port]/addSongsFromUrl
+    -------------------------------------------
     Request format:
     {
-        "urls"(list): "[url1,url2]"
-        "advanced"(json):   {
-                                "max_gens": int,
-                                "population_size": int,
-                                "selection_p": int(0-100),
-                                "mutation_prob": int(0-100),
-                                "crossover_prob": int(0-100)
-                            }
+        "urls": "[url1, url2]"
+        "advanced": {
+                        "max_gens": int,
+                        "population_size": int,
+                        "selection_p": int(0-100),
+                        "mutation_prob": int(0-100),
+                        "crossover_prob": int(0-100)
+                    }
     }
+    -------------------------------------------
+    Response ex:
+    {
+        "msg": "ok. starting to fetch audio data from urls",
+        "error": "",
+        "id": "c692a9cd-b2d3-4574-ba2d-a042bbfc2c08"
+    }
+
     """
     class Content(BasicContent):
         def __init__(self):
@@ -51,7 +61,8 @@ def add_songs_from_url(request: HttpRequest):
         execution.save()
         content.id = str(execution.identifier)
 
-        controller.start_exec(urls, ea_params, execution)
+        connections.close_all()
+        controller.start_exec(urls, ea_params, content.id)
 
         response.status_code = 200
         content.msg = "ok. starting to fetch audio data from urls"

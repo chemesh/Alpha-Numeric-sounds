@@ -23,7 +23,7 @@ class Controller:
 
         try:
             self.logger.info(f"creating process with execution {exec_id}")
-            self.process_list[exec_id] = multiprocessing.Process(target=self._run, args=(urls, params, execution_model,))
+            self.process_list[exec_id] = multiprocessing.Process(target=self._run, args=(urls, params, exec_id))
             self.logger.info(f"start execution {exec_id}")
             self.process_list[exec_id].start()
 
@@ -32,17 +32,24 @@ class Controller:
             self.logger.error(msg)
             raise ExecutionError(msg)
 
-    def _run(self, urls, params, execution_model):
+    def _run(self, urls, params, exec_id):
+        execution_model = Execution.objects.get(identifier=exec_id)
         try:
             # fetch songs data from youtube
+            self.logger.info("starting to download songs audio data from yt...")
             yt_manager = YTManager()
             songs_paths = yt_manager.download(urls)
+            self.logger.info("successfully downloaded audio data")
 
             # update songs localpath in DB
             execution_model.song_1 = songs_paths[0]
             execution_model.song_2 = songs_paths[1]
             execution_model.state = STATUS.IN_PROGRESS
+            self.logger.info(f"execution {execution_model.identifier} status: {STATUS.IN_PROGRESS}")
             execution_model.save()
+            self.logger.info(f"updated DB for execution {execution_model.identifier}:"
+                             f"audio data saved in {execution_model.song_1}"
+                             f"and {execution_model.song_2}")
 
             # Backend logic
             # songs = [Song.from_wav_file(path) for path in songs_paths]
