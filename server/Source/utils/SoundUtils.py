@@ -378,6 +378,11 @@ def partition(data: np.ndarray, samplerate: int, n_bkps_max: int, hop_length: in
     return bkps_times
 
 
+def get_max_bkps(tempo, duration_in_secs):
+    return math.ceil(tempo/duration_in_secs)
+
+
+def break_to_timed_segments(data: np.ndarray, sr: int, n_bkps_max: int = 10) -> np.ndarray:
 def break_to_timed_segments(data: np.ndarray, sr: int, n_bkps_max: int = 10,
                             return_indi_segments: bool = True, return_bkps_as_frames: bool = False) -> np.ndarray:
     bkps = partition(data, sr, n_bkps_max, in_ms=True)
