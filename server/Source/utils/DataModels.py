@@ -6,12 +6,13 @@ import server.Source.utils.SoundUtils as su
 class Song(object):
 
     def __init__(self, data: np.ndarray, sr: int = 22050):
-        self._data = librosa.effects.trim(data)
+        self._data, _ = librosa.effects.trim(data)
         self.sr = sr
         self._tempo = None
         self._beat_frames = None
         self._segments_time_bkps = None
         self._key = None
+        self._duration = librosa.get_duration(data)
 
     def _get_tempobeat(self):
         self._tempo, self._beat_frames = librosa.beat.beat_track(y=self._data, sr=self.sr)
@@ -31,6 +32,11 @@ class Song(object):
     @property
     def data(self):
         return self._data
+
+    @property
+    def duration(self):
+        """duration in seconds"""
+        return self._duration
 
     @property
     def tempo(self):

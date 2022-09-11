@@ -379,10 +379,9 @@ def partition(data: np.ndarray, samplerate: int, n_bkps_max: int, hop_length: in
 
 
 def get_max_bkps(tempo, duration_in_secs):
-    return math.ceil(tempo/duration_in_secs)
+    return math.ceil(tempo/duration_in_secs) * 6
 
 
-def break_to_timed_segments(data: np.ndarray, sr: int, n_bkps_max: int = 10) -> np.ndarray:
 def break_to_timed_segments(data: np.ndarray, sr: int, n_bkps_max: int = 10,
                             return_indi_segments: bool = True, return_bkps_as_frames: bool = False) -> np.ndarray:
     bkps = partition(data, sr, n_bkps_max, in_ms=True)
@@ -488,19 +487,3 @@ def extract_key(data: np.ndarray, sr: int):
     dist = pd.PitchDistribution.pitch_distribution(data, sr)
     #key = krumhansl_schmuckler.get_key(dist)
     return key
-
-
-def compute_similarity_matrix_slow(self, chroma):
-    """Slow but straightforward way to compute time time similarity matrix"""
-    num_samples = chroma.shape[1]
-    time_time_similarity = np.zeros((num_samples, num_samples))
-    for i in range(num_samples):
-        for j in range(num_samples):
-            # For every pair of samples, check similarity
-            time_time_similarity[i, j] = 1 - (
-                np.linalg.norm(chroma[:, i] - chroma[:, j]) / sqrt(12))
-
-    return time_time_similarity
-#
-# def idx_2_freq(i: int, sr: float, n_fft: int):
-#     return float(i * (sr / n_fft / 2.))

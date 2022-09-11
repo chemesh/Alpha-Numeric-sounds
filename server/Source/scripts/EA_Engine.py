@@ -8,6 +8,7 @@ from server.Source.utils.DataModels import SongPool, Song
 from server.Source.utils.Logger import Logger
 from server.Source.utils.Constants import POPULATION_SIZE, TOURNSIZE_PERCENT, CROSSOVER_PROBABILITY, MUTATION_PROBABILITY, SAMPLERATE
 import server.Source.utils.Raters as raters
+from server.Source.utils.SoundUtils import INSTRUMENT as inst
 
 
 class EA_Engine(object):
@@ -28,10 +29,20 @@ class EA_Engine(object):
         # ADD HERE THE SUB RATERS
 
         @staticmethod
-        def _sr1(individual):
+        def _sr1(individual: Song):
             # get timed segments
+            max_bkps = su.get_max_bkps(individual.tempo, individual.duration)
+            bkps = su.break_to_timed_segments(individual.data, max_bkps,
+                                              return_indi_segments=False, return_bkps_as_frames=True)
             # split each to layers
-            # rate piano and vocals (for each seg) with neigh_pitch
+            sum_rates = num_rates = 0
+
+            for bkp, next_bkp in zip(bkps[:-1], bkps[1:]):
+                # rate piano and vocals (for each seg) with neigh_pitch
+                layers = su.separate_voices(individual.data[bkp:next_bkp])
+                vocal_notes = su.extract_notes(layers[inst.VOCALS.value], )
+                rate_piano_crazy = raters.sub_rater_neighboring_pitch(layers[inst.VOCALS.value])
+
             # return average
             return raters.sub_rater_neighboring_pitch()
             return random.random()
