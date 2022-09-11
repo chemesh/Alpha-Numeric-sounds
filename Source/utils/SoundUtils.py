@@ -1,20 +1,44 @@
 import enum
+import re
 import numpy as np
 import random
 import librosa
 import librosa.display
 import ruptures as rpt
 import matplotlib.pyplot as plt
-from spleeter.separator import Separator
-from typing import List, Tuple, Any
 import math
+
+from typing import List, Tuple, Any
+from mingus.containers import Note
+from mingus.core import intervals, keys
+from spleeter.separator import Separator
+
 from Source.utils.Logger import Logger as log
 from Source.utils.Constants import MAX_BKPS, INPUT_FOLDER
 from Source.utils.keydin import pitchdistribution as pd, classifiers
-import re
-from mingus.containers import Note
-import mingus.core.intervals as intervals
 from Source.utils.DataModels import Song
+
+
+
+class INSTRUMENT(enum.Enum):
+    BASS = "bass"
+    DRUMS = "drums"
+    PIANO = "piano"
+    VOCALS = "vocals"
+    OTHER = "other"
+
+    @classmethod
+    def list(cls):
+        return list(map(lambda c: c.value, cls))
+
+
+class SCALE_TYPE(enum.Enum):
+    major = "major"
+    minor = "minor"
+    diatonic = "diatonic"
+
+
+KEYS = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#']
 
 # TODOp:
 #  adjust BPM of all individuals! (stretch all to max / smoosh all to min with given probability)
@@ -66,25 +90,22 @@ def adjust_pitch(song1:Song, song2:Song):
         song2.data = librosa.effects.pitch_shift(song2.data, delta)
 
 
-def find_equivalent_key_chord(key: str, chord: str) -> (str, str):
+def find_equivalent_key_chord(key: str, chord: SCALE_TYPE) -> (str, str):
     """
     key: 'C', 'A', 'F#', etc...
     chord: 'major' or 'minor'
     returns the equivalent key in the opposing chord
     """
-    return key, chord
+    if key not in KEYS:
+        raise Exception(f'{key} given as parameter is not an accepted key')
 
-
-class INSTRUMENT(enum.Enum):
-    BASS = "bass"
-    DRUMS = "drums"
-    PIANO = "piano"
-    VOCALS = "vocals"
-    OTHER = "other"
-
-    @classmethod
-    def list(cls):
-        return list(map(lambda c: c.value, cls))
+    if chord == SCALE_TYPE.major:
+        rel_key = keys.relative_minor(key)
+        rel_scale_type = SCALE_TYPE.minor
+    else:
+        rel_key = keys.relative_major(key)
+        rel_scale_type = SCALE_TYPE.major
+    return rel_key, rel_scale_type
 
 
 def denoise(y: np.ndarray, min_db_ratio: float) -> np.ndarray:
