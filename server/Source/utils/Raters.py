@@ -1,8 +1,8 @@
 import librosa
 import numpy as np
 from mingus.containers import Note
-import Source.utils.SoundUtils as su
-import Source.utils.Logger as log
+import server.Source.utils.SoundUtils as su
+import server.Source.utils.Logger as log
 
 def sub_rater_neighboring_pitch(notes: np.ndarray, need_mingus_conversion:bool = True):
     """

@@ -13,10 +13,10 @@ from mingus.containers import Note
 from mingus.core import intervals, keys
 from spleeter.separator import Separator
 
-from Source.utils.Logger import Logger as log
-from Source.utils.Constants import MAX_BKPS, INPUT_FOLDER
-from Source.utils.keydin import pitchdistribution as pd, classifiers
-import Source.utils.DataModels as data_model
+from server.Source.utils.Logger import Logger as log
+from server.Source.utils.Constants import MAX_BKPS, INPUT_FOLDER
+from server.Source.utils.keydin import pitchdistribution as pd, classifiers
+import server.Source.utils.DataModels as data_model
 
 
 
