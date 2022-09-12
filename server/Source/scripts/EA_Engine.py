@@ -30,7 +30,7 @@ class EA_Engine(object):
         @staticmethod
         def _sr1(individual: Song):
             max_bkps = su.get_max_bkps(individual.tempo, individual.duration)
-            _, bkps = su.break_to_timed_segments(individual.data, max_bkps,
+            _, bkps = su.break_to_timed_segments(individual.data, individual.sr, max_bkps,
                                                  return_indi_segments=False, return_bkps_as_frames=True)
             sum_rates = num_rates = 0
             for bkp, next_bkp in zip(bkps[:-1], bkps[1:]):
@@ -48,7 +48,7 @@ class EA_Engine(object):
         def _sr2(individual):
             # get timed segments
             max_bkps = su.get_max_bkps(individual.tempo, individual.duration)
-            _, bkps = su.break_to_timed_segments(individual.data, max_bkps,
+            _, bkps = su.break_to_timed_segments(individual.data, individual.sr, max_bkps,
                                                  return_indi_segments=False, return_bkps_as_frames=True)
             # split each to layers
             sum_rates = num_rates = 0

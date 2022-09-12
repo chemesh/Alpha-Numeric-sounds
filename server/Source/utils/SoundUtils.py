@@ -291,12 +291,11 @@ def optimal_bkps(bkps_costs: List) -> int:
                               bkp_pos, bkps_costs[bkp_pos],
                               bkp_pos + 1, bkps_costs[bkp_pos + 1])
         if not max_curve:
-            max_angle = curve
+            max_curve = curve
             continue
         if curve > max_curve:
             max_curve = curve
             max_pos = bkp_pos
-            # print(f"max_pos: {max_pos}, max_angle: {max_angle}")
     return max_pos + 1
 
 
@@ -304,16 +303,6 @@ def compute_curve(x1, y1, x2, y2, x3, y3):
     first_decline = (y1 - y2) / (x1 - x2)
     second_decline = (y2 - y3) / (x2 - x3)
     return first_decline/second_decline
-
-
-def compute_angle(x1, y1, x2, y2, x3, y3):
-    m1 = delta1 = (y2 - y1) / (x2 - x1)    # first incline
-    m2 = delta2 = (y3 - y2) / (x3 - x2)    # second incline
-    angl_tan = (m2 - m1) / (1 + m2 * m1)
-    print(angl_tan)
-    angle = math.atan(angl_tan)
-    print(f"angle between n_bkps: {x1}, {x2}, {x3}: {angle}")
-    return angle
 
 
 def separate_voices(data: np.ndarray, as_mono=True, sep="spleeter:5stems"):
@@ -342,7 +331,7 @@ def fig_ax(figsize=(15, 5), dpi=150):
 
 
 def partition(data: np.ndarray, samplerate: int, n_bkps_max: int, hop_length: int = 256, in_ms: bool = False) -> List:
-    # Compute the onset strength
+    logger = log()
     oenv = librosa.onset.onset_strength(
         y=data, sr=samplerate, hop_length=hop_length
     )
@@ -352,13 +341,14 @@ def partition(data: np.ndarray, samplerate: int, n_bkps_max: int, hop_length: in
         sr=samplerate,
         hop_length=hop_length)
 
-    # Choose detection method
     algo = rpt.KernelCPD(kernel="linear").fit(tempogram.T)
 
     # Choose the number of changes (elbow heuristic)
     # Start by computing the segmentation with most changes.
     # After start, all segmentations with 1, 2,..., K_max-1 changes are also available for free.
+    logger.info("START: algo predict 1")
     _ = algo.predict(n_bkps_max)
+    logger.info("DONE: algo predict 1")
 
     array_of_n_bkps = np.arange(1, n_bkps_max + 1)
     bkps_costs = [get_sum_of_cost(algo=algo, n_bkps=n_bkps) for n_bkps in array_of_n_bkps]
@@ -368,7 +358,8 @@ def partition(data: np.ndarray, samplerate: int, n_bkps_max: int, hop_length: in
     print(f"n_bkps: {n_bkps}")
 
     # Segmentation
-    bkps = algo.predict(n_bkps=n_bkps+1)
+    bkps = algo.predict(n_bkps=n_bkps)
+
     # Convert the estimated change points (frame counts) to actual timestamps
     bkps_times = librosa.frames_to_time(bkps, sr=samplerate, hop_length=hop_length)
     if in_ms:
@@ -378,12 +369,13 @@ def partition(data: np.ndarray, samplerate: int, n_bkps_max: int, hop_length: in
 
 
 def get_max_bkps(tempo, duration_in_secs):
-    return math.ceil(tempo/duration_in_secs) * 6
+    return math.ceil(max(duration_in_secs/tempo, 1.5) * 4)
 
 
 def break_to_timed_segments(data: np.ndarray, sr: int, n_bkps_max: int = 10,
                             return_indi_segments: bool = True, return_bkps_as_frames: bool = False) -> (np.ndarray, np.ndarray):
     bkps = partition(data, sr, n_bkps_max, in_ms=True)
+    print(f'BKPS before convert: {bkps}')
     rocks = None
     if return_indi_segments:
         i = 0
@@ -393,6 +385,7 @@ def break_to_timed_segments(data: np.ndarray, sr: int, n_bkps_max: int = 10,
             rocks[i] = data[t1:t2]
             i += 1
     bkps = [ms_to_frame(bkp, sr) for bkp in bkps] if return_bkps_as_frames else bkps
+    print(f'BKPS after convert: {bkps}')
     return rocks, bkps
 
 
@@ -432,6 +425,7 @@ def to_librosa_key(key:str):
 def extract_notes(data: np.ndarray, corresponding_beat_drops: np.ndarray, sr: int=22050):
     logger = log()
     logger.info(f'data type: {type(data)}, shape: {data.shape}')
+    logger.info(f'beat_drops: {corresponding_beat_drops}, shape: {corresponding_beat_drops.shape}')
     # we want stft windows numbered as bit frames
     win_length = calc_win_length_by_beat_track(corresponding_beat_drops)
     logger.info(f'calculated win_length of {win_length}')
@@ -440,8 +434,6 @@ def extract_notes(data: np.ndarray, corresponding_beat_drops: np.ndarray, sr: in
     freqs_list = np.empty([freq_domain.shape[0]], dtype=np.ndarray)
     notes_list = np.empty([freq_domain.shape[0]], dtype=np.ndarray)
     j = 0
-    i = 0
-    idx_keeper = 0
     try:
         for beat_frame_freqs in freq_domain:
             i = 0
@@ -458,6 +450,7 @@ def extract_notes(data: np.ndarray, corresponding_beat_drops: np.ndarray, sr: in
     except Exception as e:
         logger.error(f'FELL ON (black days...): i = {i-1}, j = {j-1}, idx = {idx_keeper}, value = {corr_frequencies[idx_keeper]}\nError: {e.__str__()}')
         exit(1)
+    logger.info(f'notes list shape: {notes_list.shape}, notes: {notes_list}')
     return notes_list, win_length
     # get the chord according to the frequencies in each
 
