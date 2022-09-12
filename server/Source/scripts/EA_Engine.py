@@ -3,6 +3,7 @@ import random
 from copy import deepcopy
 
 import deap.algorithms as dpa
+import librosa.beat
 from deap import base, creator, tools
 
 import server.Source.utils.SoundUtils as su
@@ -10,6 +11,8 @@ from server.Source.utils.DataModels import SongPool, Song
 from server.Source.utils.Logger import Logger
 from server.Source.utils.Constants import POPULATION_SIZE, TOURNSIZE_PERCENT, CROSSOVER_PROBABILITY, MUTATION_PROBABILITY, SAMPLERATE
 import server.Source.utils.Raters as raters
+from server.Source.utils.SoundUtils import INSTRUMENT as inst
+
 
 
 class EA_Engine(object):
@@ -19,8 +22,6 @@ class EA_Engine(object):
 
         @classmethod
         def rate(cls, individual):
-            # todo: consider calling methods in different threads for more efficiency
-            # todo: find a way to create 'method_list' one time only at the initialization
             if not cls.method_list:
                 cls._init_method_list()
             return (sum([getattr(cls, method)(individual) for method in cls.method_list]) / len(cls.method_list),)
@@ -29,24 +30,43 @@ class EA_Engine(object):
         def _init_method_list(cls):
             cls.method_list = [func for func in dir(cls) if callable(getattr(cls, func)) and func.startswith("_sr")]
 
-        # ADD HERE THE SUB RATERS
-
         @staticmethod
-        def _sr1(individual):
-            # get timed segments
-            # split each to layers
-            # rate piano and vocals (for each seg) with neigh_pitch
-            # return average
-            # return raters.sub_rater_neighboring_pitch()
-            return random.random()
+        def _sr1(individual: Song):
+            max_bkps = su.get_max_bkps(individual.tempo, individual.duration)
+            _, bkps = su.break_to_timed_segments(individual.data, max_bkps,
+                                                 return_indi_segments=False, return_bkps_as_frames=True)
+            sum_rates = num_rates = 0
+            for bkp, next_bkp in zip(bkps[:-1], bkps[1:]):
+                tempo, beat_track = librosa.beat.beat_track(individual.data[bkp:next_bkp], individual.sr)
+                layers = su.separate_voices(individual.data[bkp:next_bkp])
+                vocal_notes, _ = su.extract_notes(layers[inst.VOCALS.value], beat_track)
+                rate_vocal_crazy = raters.sub_rater_neighboring_pitch(vocal_notes)
+                piano_notes, _ = su.extract_notes(layers[inst.PIANO.value], beat_track)
+                rate_piano_crazy = raters.sub_rater_neighboring_pitch(piano_notes)
+                sum_rates += rate_piano_crazy + rate_vocal_crazy
+                num_rates += 2
+            return sum_rates / num_rates
+
 
         @staticmethod
         def _sr2(individual):
             # get timed segments
+            max_bkps = su.get_max_bkps(individual.tempo, individual.duration)
+            _, bkps = su.break_to_timed_segments(individual.data, max_bkps,
+                                                 return_indi_segments=False, return_bkps_as_frames=True)
             # split each to layers
+            sum_rates = num_rates = 0
+            for bkp, next_bkp in zip(bkps[:-1], bkps[1:]):
+                tempo, beat_track = librosa.beat.beat_track(individual.data[bkp:next_bkp], individual.sr)
+                # rate piano and vocals (for each seg) with neigh_pitch
+                layers = su.separate_voices(individual.data[bkp:next_bkp], sep="spleeter:2stems")
+                vocal_notes, _ = su.extract_notes(layers[inst.VOCALS.value], beat_track)
+                key = su.extract_key(layers[inst.VOCALS.value], individual.sr)
+                sum_rates += raters.sub_rater_notes_in_key(vocal_notes, key)
+                num_rates += 1
             # rate vocals by notes in key
-            # return raters.sub_rater_notes_in_key()
-            return random.random()
+            return sum_rates / num_rates
+
 
     def __init__(self, logger: Logger):
         self.toolbox = base.Toolbox()
@@ -83,22 +103,12 @@ class EA_Engine(object):
         s, _ = su.rand_reconstruct(individual.data, individual.sr, individual.data, individual.sr, inst=inst)
         return creator.Individual(data=s, sr=SAMPLERATE),
 
+
     @classmethod
     def _crossover(cls, ind1, ind2):
         inst = random.choice(su.INSTRUMENT.list() + [None])
         s1, s2 = su.rand_reconstruct(ind1.data, ind1.sr, ind2.data, ind2.sr, inst=inst)
         return creator.Individual(data=s1, sr=SAMPLERATE), creator.Individual(data=s2, sr=SAMPLERATE)
-
-    @staticmethod
-    def _get_bkps(num_of_bkps, gens):
-        if num_of_bkps > 0:
-            bkps = set()
-            coef = gens / num_of_bkps
-            for i in range(num_of_bkps):
-                bkps.add(i * coef)
-            return bkps
-        else:
-            return None
 
     def _calculate_fitness_values(self, population):
         # calculate fitness tuple for each individual in the population:
@@ -118,9 +128,12 @@ class EA_Engine(object):
             mutation_prob,
             crossover_prob):
 
-        self.logger.info("adding songs to pool")
-        self.song_pool.add(*songs)
 
+        self.logger.info("adding songs to pool")
+        su.adjust_bpm(songs[0], songs[1])
+        su.adjust_pitch(songs[0], songs[1])
+        self.song_pool.add(*songs)
+        
         # create initial population (generation 0):
         self.logger.info("creating population")
         population = self._population_creator(popsize=popsize)
@@ -168,6 +181,7 @@ class EA_Engine(object):
             # find and print best individual:
             best_index = fitness_values.index(max(fitness_values))
             self.logger.info(f"Best Individual = {population[best_index]}")
+
 
         # return the top best individuals created
         return sorted(population, key=lambda ind: max(ind.fitness.values), reverse=True)[:3]

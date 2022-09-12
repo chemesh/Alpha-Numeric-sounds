@@ -1,3 +1,4 @@
+
 # import server.Source.utils.Constants as consts
 # import librosa
 # import librosa.display
@@ -37,6 +38,7 @@ def main():
     # s1 = s2 = Song(*songs_paths)
     # res = engine.mix(s1, s2)
     # print(res)
+
     # sep = Separator("spleeter:5stems")
 
     # data, samplerate = librosa.load(librosa.ex('trumpet'))
@@ -45,13 +47,52 @@ def main():
     # y1, sr1 = librosa.load(os.path.join(INPUT_FOLDER, "bohemian_raphsody.wav"), offset=30., duration=30)
     # y1, sr1 = librosa.load(WAV_FILE_TEST, duration=30)
     # y1, sr1 = librosa.load(f'{consts.INPUT_FOLDER}/lovestory.wav', duration=60)
-    # y1, sr1 = librosa.load(librosa.ex('fishin'), duration=60)
-    # voices = su.separate_voices(y1, as_mono=False)
-    # for inst, data in voices.items():
-    #     sf.write(f"{consts.OUTPUT_FOLDER}/{inst}.wav", data, sr1)
-    # voices_as_mono = su.separate_voices(y1)
-    # for inst, data in voices_as_mono.items():
-    #     sf.write(f"{consts.INPUT_FOLDER}/{inst}_mono.wav", data, sr1)
+    log = logger.Logger()
+    y1, sr1 = librosa.load('C:\\Users\\roi.shemesh\\PycharmProjects\\Alpha-Numeric-sounds\\resources\\לבד במדבר  -  גיא מזיג.wav', duration=187)
+    y1 = librosa.effects.trim(y1)
+    timed_segs, bkps = su.break_to_timed_segments(y1, sr1, n_bkps_max=20)
+    print(f'BKPS ------ {bkps}')
+    print('segments ', timed_segs.shape)
+    i = 0
+    for seg in timed_segs:
+        log.info(f'beginning of iter: seg.shape = {seg.shape}')
+        bpm, beat_track = librosa.beat.beat_track(seg, sr1)
+        seg_layers = su.separate_voices(seg)
+        vocal_notes, _ = su.extract_notes(seg_layers[INSTRUMENT.VOCALS.value], beat_track)
+        piano_notes, _ = su.extract_notes(seg_layers[INSTRUMENT.PIANO.value], beat_track)
+        rate1 = (rate.sub_rater_neighboring_pitch(vocal_notes) + rate.sub_rater_neighboring_pitch(piano_notes))/2
+        vocals_key = su.extract_key(seg_layers[INSTRUMENT.VOCALS.value], sr1)
+        rate2 = rate.sub_rater_notes_in_key(vocal_notes, vocals_key)
+        log.info(f'avg rate of iteration: {(rate1+rate2)/2}')
+        #sf.write(f"{consts.INPUT_FOLDER}/love-{i}-vocals.wav", seg_layers[INSTRUMENT.VOCALS.value], sr1)
+        #sf.write(f"{consts.INPUT_FOLDER}/love-{i}-piano.wav", seg_layers[INSTRUMENT.PIANO.value], sr1)
+        log.info('========================================= FINISHED ITER =============================================')
+        i += 1
+
+
+
+
+
+    # tempo, beat_track = librosa.beat.beat_track(timed_segs[1], sr1)
+    # key = su.extract_key(y1, sr1)
+    # log.info(f'found key: {key}')
+    # print('segments ', timed_segs.shape)
+    # log.info('trying to extract frequencies for chords...')
+    # layers_of_2nd_seg = su.separate_voices(timed_segs[1])
+    # print(f'extract voices return {layers_of_2nd_seg.keys()}')
+    # #layers_of_2nd_seg = su.slice_to_audio_layers(timed_segs[2], sr1)
+    # notes, n_fft = su.extract_notes(layers_of_2nd_seg[INSTRUMENT.VOCALS.value], beat_track)
+    # key = su.extract_key(layers_of_2nd_seg[INSTRUMENT.VOCALS.value], sr1)
+    # log.info(f'key found is: {key}')
+    # rms = librosa.feature.rms(layers_of_2nd_seg[INSTRUMENT.VOCALS.value], frame_length=n_fft)
+    # log.info(f'rms found: {rms}, with shape {rms.shape}')
+    # #notes = [list(map(su.to_mingus_form, notes)) for note in notes if type(note) != str and note is not None]
+    # first_rate = rate.sub_rater_neighboring_pitch(notes)
+    # log.info(f'neighboring pitch rating of vocals of second segment: {first_rate}')
+    # second_rate = rate.sub_rater_notes_in_key(notes, key)
+    # log.info(f'num of notes in key rating of vocals of second segment: {second_rate}')
+    # sf.write(f"{consts.INPUT_FOLDER}/guess_who_mono.wav", layers_of_2nd_seg[0][0], sr1)
+
     # bkps = su.partition(y1, sr1, 10)
     # print(f"bkps: {bkps}")
     #y2, sr2 = librosa.load(os.path.join(INPUT_FOLDER, "im_rak_tedabri.wav"), duration=30)

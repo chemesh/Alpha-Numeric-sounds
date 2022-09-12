@@ -12,6 +12,7 @@ class Song(object):
         self._beat_frames = None
         self._segments_time_bkps = None
         self._key = None
+        self._duration = librosa.get_duration(data)
 
     def _get_tempobeat(self):
         self._tempo, self._beat_frames = librosa.beat.beat_track(y=self._data, sr=self.sr)
@@ -21,6 +22,7 @@ class Song(object):
         print(f"max bkps: {max_bkps}")
         self._segments_time_bkps = su.partition(self._data, self.sr, max_bkps, in_ms=True)
         print(f"segments timestamps: {self._segments_time_bkps}")
+
 
     def to_librosa_model(self):
         pass
@@ -36,6 +38,11 @@ class Song(object):
         return self._data
 
     @property
+    def duration(self):
+        """duration in seconds"""
+        return self._duration
+
+    @property
     def tempo(self):
         if not self._tempo:
             self._get_tempobeat()
@@ -43,9 +50,9 @@ class Song(object):
 
     @property
     def beat_frames(self):
-        if not self._beat_frames:
+        if self._beat_frames is None:
             self._get_tempobeat()
-        return self.beat_frames
+        return self._beat_frames
 
     @property
     def beat_times(self):
