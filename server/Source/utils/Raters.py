@@ -1,3 +1,5 @@
+from typing import List
+
 import librosa
 import numpy as np
 from mingus.containers import Note
@@ -41,3 +43,19 @@ def sub_rater_notes_in_key(notes: np.ndarray, key):
                 count_in_key += sum(1 for nt in note if nt.name in key_notes)
     logger.info(f'counted {count_in_key} note in key {key} out of {count_all_notes} notes a.i.e')
     return count_in_key/count_all_notes
+
+
+def sub_rater_verify_parts_length(bkps_list: List):
+    """
+    This sub rater compares and verifies that the lengths of the essential parts of the song,
+    have similar lengths in order of magnitude
+    """
+
+    # calculate the duration for each part
+    parts_duration = [bkps_list[i] - bkps_list[i-1] for i in range(1, len(bkps_list))]
+    avg_duration = sum(parts_duration) / len(bkps_list)
+
+    # here d is the sum of 'distances' of all the parts durations from the average duration
+    d = sum([abs(avg_duration - part_duration) % avg_duration for part_duration in parts_duration])
+
+    return 1 - d / (len(bkps_list) * avg_duration)
