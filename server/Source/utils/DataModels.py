@@ -18,7 +18,7 @@ class Song(object):
         self._tempo, self._beat_frames = librosa.beat.beat_track(y=self._data, sr=self.sr)
 
     def _get_bkps(self):
-        _, self._segments_time_bkps = su.break_to_timed_segments(self._data)
+        _, self._segments_time_bkps = su.break_to_timed_segments(self._data, self.sr)
 
     def to_librosa_model(self):
         pass

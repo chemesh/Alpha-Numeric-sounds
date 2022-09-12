@@ -29,42 +29,39 @@ class EA_Engine(object):
 
         @staticmethod
         def _sr1(individual: Song):
-            # get timed segments
             max_bkps = su.get_max_bkps(individual.tempo, individual.duration)
-            bkps = su.break_to_timed_segments(individual.data, max_bkps,
-                                              return_indi_segments=False, return_bkps_as_frames=True)
-            # split each to layers
+            _, bkps = su.break_to_timed_segments(individual.data, max_bkps,
+                                                 return_indi_segments=False, return_bkps_as_frames=True)
             sum_rates = num_rates = 0
-            tempo, beat_track = librosa.beat.beat_track(individual.data, individual.sr)
             for bkp, next_bkp in zip(bkps[:-1], bkps[1:]):
-                # rate piano and vocals (for each seg) with neigh_pitch
+                tempo, beat_track = librosa.beat.beat_track(individual.data[bkp:next_bkp], individual.sr)
                 layers = su.separate_voices(individual.data[bkp:next_bkp])
-                vocal_notes = su.extract_notes(layers[inst.VOCALS.value], beat_track)
-                rate_vocal_crazy = raters.sub_rater_neighboring_pitch(layers[inst.VOCALS.value])
-                piano_notes = su.extract_notes(layers[inst.PIANO.value], beat_track)
-                rate_piano_crazy = raters.sub_rater_neighboring_pitch(layers[inst.PIANO.value])
+                vocal_notes, _ = su.extract_notes(layers[inst.VOCALS.value], beat_track)
+                rate_vocal_crazy = raters.sub_rater_neighboring_pitch(vocal_notes)
+                piano_notes, _ = su.extract_notes(layers[inst.PIANO.value], beat_track)
+                rate_piano_crazy = raters.sub_rater_neighboring_pitch(piano_notes)
                 sum_rates += rate_piano_crazy + rate_vocal_crazy
                 num_rates += 2
-            return sum_rates/num_rates
+            return sum_rates / num_rates
 
         @staticmethod
         def _sr2(individual):
             # get timed segments
             max_bkps = su.get_max_bkps(individual.tempo, individual.duration)
-            bkps = su.break_to_timed_segments(individual.data, max_bkps,
-                                              return_indi_segments=False, return_bkps_as_frames=True)
+            _, bkps = su.break_to_timed_segments(individual.data, max_bkps,
+                                                 return_indi_segments=False, return_bkps_as_frames=True)
             # split each to layers
             sum_rates = num_rates = 0
-            tempo, beat_track = librosa.beat.beat_track(individual.data, individual.sr)
             for bkp, next_bkp in zip(bkps[:-1], bkps[1:]):
+                tempo, beat_track = librosa.beat.beat_track(individual.data[bkp:next_bkp], individual.sr)
                 # rate piano and vocals (for each seg) with neigh_pitch
                 layers = su.separate_voices(individual.data[bkp:next_bkp], sep="spleeter:2stems")
-                vocal_notes = su.extract_notes(layers[inst.VOCALS.value], beat_track)
+                vocal_notes, _ = su.extract_notes(layers[inst.VOCALS.value], beat_track)
                 key = su.extract_key(layers[inst.VOCALS.value], individual.sr)
                 sum_rates += raters.sub_rater_notes_in_key(vocal_notes, key)
                 num_rates += 1
             # rate vocals by notes in key
-            return sum_rates/num_rates
+            return sum_rates / num_rates
 
     def __init__(self, logger: Logger):
         self.toolbox = base.Toolbox()
