@@ -51,8 +51,10 @@ class Controller:
                              f"audio data saved in {execution_model.song_1}"
                              f"and {execution_model.song_2}")
 
+            # TODO: DONT FORGET TO CONVERT EA params FROM INT (0-100) TO FLOAT(0-1)
             # Backend logic
             # songs = [Song.from_wav_file(path) for path in songs_paths]
+            ## verify params extraction from UI
             # results = self.engine.mix(*songs, **params)
             # file_path = os.path.join(OUTPUT_FOLDER, f"result_{execution_model.identifier}")
             # sf.write(f"{file_path}.wav", results[0].data, results[0].sr)
