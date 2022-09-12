@@ -1,23 +1,24 @@
 import librosa
 import numpy as np
-import Source.utils.SoundUtils as su
+import server.Source.utils.SoundUtils as su
 
 
 class Song(object):
 
     def __init__(self, data: np.ndarray, sr: int = 22050):
-        self._data = data
+        self._data, _ = librosa.effects.trim(data)
         self.sr = sr
         self._tempo = None
         self._beat_frames = None
         self._segments_time_bkps = None
         self._key = None
+        self._duration = librosa.get_duration(data)
 
     def _get_tempobeat(self):
         self._tempo, self._beat_frames = librosa.beat.beat_track(y=self._data, sr=self.sr)
 
     def _get_bkps(self):
-        _, self._segments_time_bkps = su.break_to_timed_segments(self._data)
+        _, self._segments_time_bkps = su.break_to_timed_segments(self._data, self.sr)
 
     def to_librosa_model(self):
         pass
@@ -33,6 +34,11 @@ class Song(object):
         return self._data
 
     @property
+    def duration(self):
+        """duration in seconds"""
+        return self._duration
+
+    @property
     def tempo(self):
         if not self._tempo:
             self._get_tempobeat()
@@ -40,9 +46,9 @@ class Song(object):
 
     @property
     def beat_frames(self):
-        if not self._beat_frames:
+        if self._beat_frames is None:
             self._get_tempobeat()
-        return self.beat_frames
+        return self._beat_frames
 
     @property
     def beat_times(self):
@@ -50,7 +56,7 @@ class Song(object):
 
     @property
     def segments_time_bkps(self):
-        if not self._segments_time_bkps:
+        if self._segments_time_bkps is None:
             self._get_bkps()
         return self._segments_time_bkps
 
