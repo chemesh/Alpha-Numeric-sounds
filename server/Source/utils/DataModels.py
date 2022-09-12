@@ -46,9 +46,9 @@ class Song(object):
 
     @property
     def beat_frames(self):
-        if not self._beat_frames:
+        if self._beat_frames is None:
             self._get_tempobeat()
-        return self.beat_frames
+        return self._beat_frames
 
     @property
     def beat_times(self):
@@ -56,7 +56,7 @@ class Song(object):
 
     @property
     def segments_time_bkps(self):
-        if not self._segments_time_bkps:
+        if self._segments_time_bkps is None:
             self._get_bkps()
         return self._segments_time_bkps
 

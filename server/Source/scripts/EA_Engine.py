@@ -90,6 +90,7 @@ class EA_Engine(object):
 
     @classmethod
     def _mutate(cls, individual):
+        # todo should we put here librosa.effects.remix() instead?
         return EA_Engine._crossover(individual, individual)
 
     @classmethod

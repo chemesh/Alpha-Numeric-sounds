@@ -52,7 +52,7 @@ def adjust_bpm(song1: data_model.Song, song2: data_model.Song):
     """
     bpm1 = song1.tempo
     bpm2 = song2.tempo
-    smoosh = random.choice(True, False)
+    smoosh = random.choice([True, False])
     if (bpm1 > bpm2 and smoosh) or (bpm2 > bpm1 and not smoosh):
         song2.data = librosa.effects.time_stretch(song2.data, bpm1/bpm2)
     else:
@@ -205,7 +205,6 @@ def extract_voice(data: np.ndarray, sr: int, inst: INSTRUMENT) -> Tuple[np.ndarr
 
 
 def ms_to_frame(ts: int, sr: int):
-    print(f'{sr} * {ts} // 1000 = {sr // 1000 * ts}')
     return sr // 1000 * ts
 
 

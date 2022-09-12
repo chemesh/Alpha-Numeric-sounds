@@ -21,9 +21,9 @@ def sub_rater_neighboring_pitch(notes: np.ndarray, need_mingus_conversion:bool =
     logger.info(f'counted {count_crazy_notes} crazy notes out of {len(mingus_notes)} notes a.i.a')
     return 1-count_crazy_notes/len(mingus_notes)
 
+
 def sub_rater_notes_in_key(notes: np.ndarray, key):
     logger = log.Logger()
-    #2DO adjust the key to librosa representation of it
     """
     notes: list of note lists with one note or more each
     key: the key to check the notes against
