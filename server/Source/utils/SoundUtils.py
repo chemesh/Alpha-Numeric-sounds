@@ -127,15 +127,17 @@ def rand_reconstruct(
         data2: np.ndarray,
         sr2: int,
         inst: INSTRUMENT = None,
-        hop_length: int = 256
+        hop_length: int = 256,
+        bkps1=None,
+        bkps2=None
 ) -> Any:
     bkps1 = np.pad(
-        array=partition(data1, sr1, MAX_BKPS, hop_length=hop_length, in_ms=True),
+        array=bkps1 if bkps1 is not None else partition(data1, sr1, MAX_BKPS, hop_length=hop_length, in_ms=True),
         pad_width=(1, 0),
         constant_values=0
     )
     bkps2 = np.pad(
-        array=partition(data2, sr2, MAX_BKPS, hop_length=hop_length, in_ms=True),
+        array=bkps2 if bkps2 is not None else partition(data2, sr2, MAX_BKPS, hop_length=hop_length, in_ms=True),
         pad_width=(1, 0),
         constant_values=0
     )
@@ -145,9 +147,8 @@ def rand_reconstruct(
     idx2 = random.randrange(len(bkps2) - 1)
 
     # randomize which function to use between "swap" and "overlay"
-    no_change = random.choice([True, False])
     if random.choice(["swap", "overlay"]) == "swap":
-        new_data, _ = swap(
+        new_data1, new_data2 = swap(
             data1=data1,
             sr1=sr1,
             data2=data2,
@@ -157,7 +158,7 @@ def rand_reconstruct(
             d2_start_ms=bkps2[idx2],
             d2_end_ms=bkps2[idx2 + 1],
             inst=inst
-        ) if no_change else swap(
+        ) if random.choice([True, False]) else swap(
             data1=data2,
             sr1=sr2,
             data2=data1,
@@ -169,14 +170,15 @@ def rand_reconstruct(
             inst=inst
         )
     else:
-        new_data, _ = overlay(
+        new_data1, _ = overlay(
             data1=data1,
             sr1=sr1,
             data2=data2[ms_to_frame(bkps2[idx2], sr2):ms_to_frame(bkps2[idx2 + 1], sr2)],
             sr2=sr2,
             start_ms=bkps1[idx1],
             inst=inst
-        ) if no_change else overlay(
+        )
+        new_data2, _ = overlay(
             data1=data2,
             sr1=sr2,
             data2=data1[ms_to_frame(bkps1[idx1], sr1):ms_to_frame(bkps1[idx1 + 1], sr1)],
@@ -184,7 +186,7 @@ def rand_reconstruct(
             start_ms=bkps2[idx2],
             inst=inst
         )
-    return new_data
+    return new_data1, new_data2
 
 
 def extract_voice(data: np.ndarray, sr: int, inst: INSTRUMENT) -> Tuple[np.ndarray, np.ndarray]:
@@ -194,7 +196,7 @@ def extract_voice(data: np.ndarray, sr: int, inst: INSTRUMENT) -> Tuple[np.ndarr
     and second value is the original data without the extracted voice
     """
     voices = separate_voices(data)
-    voice_to_extract = voices.pop(inst.value)
+    voice_to_extract = voices.pop(inst)
 
     new_data = voices.popitem()[1]
     while voices:
@@ -204,7 +206,7 @@ def extract_voice(data: np.ndarray, sr: int, inst: INSTRUMENT) -> Tuple[np.ndarr
 
 
 def ms_to_frame(ts: int, sr: int):
-    print(f'{sr} * {ts} // 1000 = {sr // 1000 * ts}')
+    # print(f'{sr} * {ts} // 1000 = {sr // 1000 * ts}')
     return sr // 1000 * ts
 
 
@@ -228,6 +230,10 @@ def combine(
         sr2: int,
         inst: INSTRUMENT = None
 ) -> Tuple[np.ndarray, int]:
+    """
+    gets 2 audio time series ndarrays, and overlaps one with the other
+    if inst is given, the operation will be done with the waveform
+    """
 
     if inst:
         data2, _ = extract_voice(data2, sr2, inst)
@@ -263,16 +269,15 @@ def swap(
     if inst:
         inst1, back1 = extract_voice(data1, sr1, inst)
         inst2, back2 = extract_voice(data2, sr2, inst)
-        part1 = combine(inst1, sr1, back2, sr2)
-        part2 = combine(inst2, sr2, back1, sr1)
+        part1, _ = combine(inst1, sr1, back2, sr2)
+        part2, _ = combine(inst2, sr2, back1, sr1)
     try:
         new_data1 = np.insert(np.delete(data1, slice(d1_start_idx, d1_end_idx)), d1_start_idx, part2)
         new_data2 = np.insert(np.delete(data2, slice(d2_start_idx, d2_end_idx)), d2_start_idx, part1)
         return new_data1, new_data2
     except ValueError as e:
         print(f'VALUE ERROR: data1.shape = {data1.shape},\ndata2.shape={data2.shape}\nd1_start_idx = {d1_start_idx}\nd2_start_idx = {d2_start_idx}')
-        exit(-1)
-
+        print(e.with_traceback(None))
 
 def get_sum_of_cost(algo: rpt.KernelCPD, n_bkps: int) -> float:
     """Return the sum of costs for the change points `bkps`"""
@@ -490,17 +495,6 @@ def extract_key(data: np.ndarray, sr: int):
     return key
 
 
-def compute_similarity_matrix_slow(self, chroma):
-    """Slow but straightforward way to compute time time similarity matrix"""
-    num_samples = chroma.shape[1]
-    time_time_similarity = np.zeros((num_samples, num_samples))
-    for i in range(num_samples):
-        for j in range(num_samples):
-            # For every pair of samples, check similarity
-            time_time_similarity[i, j] = 1 - (
-                np.linalg.norm(chroma[:, i] - chroma[:, j]) / sqrt(12))
 
-    return time_time_similarity
-#
 # def idx_2_freq(i: int, sr: float, n_fft: int):
 #     return float(i * (sr / n_fft / 2.))

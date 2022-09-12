@@ -1,13 +1,15 @@
+import math
 import random
+from copy import deepcopy
 
 import deap.algorithms as dpa
 from deap import base, creator, tools
 
-import Source.utils.SoundUtils as su
-from Source.utils.DataModels import SongPool, Song
-from Source.utils.Logger import Logger
-from Source.utils.Constants import POPULATION_SIZE, TOURNSIZE_PERCENT, CROSSOVER_PROBABILITY, MUTATION_PROBABILITY, SAMPLERATE
-import Source.utils.Raters as raters
+import server.Source.utils.SoundUtils as su
+from server.Source.utils.DataModels import SongPool, Song
+from server.Source.utils.Logger import Logger
+from server.Source.utils.Constants import POPULATION_SIZE, TOURNSIZE_PERCENT, CROSSOVER_PROBABILITY, MUTATION_PROBABILITY, SAMPLERATE
+import server.Source.utils.Raters as raters
 
 
 class EA_Engine(object):
@@ -35,7 +37,7 @@ class EA_Engine(object):
             # split each to layers
             # rate piano and vocals (for each seg) with neigh_pitch
             # return average
-            return raters.sub_rater_neighboring_pitch()
+            # return raters.sub_rater_neighboring_pitch()
             return random.random()
 
         @staticmethod
@@ -43,7 +45,8 @@ class EA_Engine(object):
             # get timed segments
             # split each to layers
             # rate vocals by notes in key
-            return raters.sub_rater_notes_in_key()
+            # return raters.sub_rater_notes_in_key()
+            return random.random()
 
     def __init__(self, logger: Logger):
         self.toolbox = base.Toolbox()
@@ -53,8 +56,8 @@ class EA_Engine(object):
         creator.create("Fitness_test", base.Fitness, weights=(1.0,))
         # creator.create("Individual", object, sr=int, raw_data=np.ndarray, fitness=Fitness)
         creator.create("Individual", Song, fitness=creator.Fitness_test)
-        self.toolbox.register("individual_creator", self._individual_creator)
-        self.toolbox.register("population_creator", tools.initRepeat, list, self.toolbox.individual_creator)
+        # self.toolbox.register("individual_creator", self._individual_creator)
+        # self.toolbox.register("population_creator", self._myInitRepeat, list, self.toolbox.individual_creator)
         self.toolbox.register("select", tools.selBest)
         self.toolbox.register("evaluate", self._Fitness.rate)
         self.toolbox.register("mutate", self._mutate)
@@ -63,19 +66,28 @@ class EA_Engine(object):
     def get_audio_data(self):
         return self.song_pool.generate()
 
-    def _individual_creator(self):
-        s = self.song_pool.generate()
+    def _population_creator(self, popsize):
+        population = []
+        for i in range(popsize):
+            ind = self._individual_creator(i) if i == 0 or i == 1 else self._individual_creator()
+            population.append(ind)
+        return population
+
+    def _individual_creator(self, idx=None):
+        s = self.song_pool.generate() if idx is None else self.song_pool.get(idx)
         return creator.Individual(data=s, sr=SAMPLERATE)
 
     @classmethod
     def _mutate(cls, individual):
-        return EA_Engine._crossover(individual, individual)
+        inst = random.choice(su.INSTRUMENT.list() + [None])
+        s, _ = su.rand_reconstruct(individual.data, individual.sr, individual.data, individual.sr, inst=inst)
+        return creator.Individual(data=s, sr=SAMPLERATE),
 
     @classmethod
     def _crossover(cls, ind1, ind2):
         inst = random.choice(su.INSTRUMENT.list() + [None])
-        s = su.rand_reconstruct(ind1.data, ind1.sr, ind2.data, ind2.sr, inst=inst)
-        return creator.Individual(data=s, sr=SAMPLERATE)
+        s1, s2 = su.rand_reconstruct(ind1.data, ind1.sr, ind2.data, ind2.sr, inst=inst)
+        return creator.Individual(data=s1, sr=SAMPLERATE), creator.Individual(data=s2, sr=SAMPLERATE)
 
     @staticmethod
     def _get_bkps(num_of_bkps, gens):
@@ -106,26 +118,59 @@ class EA_Engine(object):
             mutation_prob,
             crossover_prob):
 
+        self.logger.info("adding songs to pool")
         self.song_pool.add(*songs)
 
         # create initial population (generation 0):
-        population = self.toolbox.population_creator(n=popsize)
-        gen_counter = 0
+        self.logger.info("creating population")
+        population = self._population_creator(popsize=popsize)
+
+        # calculating the fitness value for each individual in the population
+        _ = self._calculate_fitness_values(population)
+
+        # initialize statistics accumulators:
+        max_fitness_values = []
+        mean_fitness_values = []
+
+        for current_gen in range(1, max_gens + 1):
+
+            self.logger.info(f"---------- Start running generation {current_gen} ----------")
+
+            # apply the selection operator, to select the next generation's individuals:
+            offspring = self.toolbox.select(population, math.ceil(selection_p * len(population)))
+            self.logger.info(f"selected best {len(offspring)} individuals out of population of {len(population)}")
+
+            # cloning the selected offsprings randomly until its size is popsize,
+            # so no potential offsprings will be pruned in the next generation
+            selected = offspring
+            offspring = [deepcopy(random.choice(selected)) for _ in range(popsize - len(selected))] + selected
+
+            self.logger.info("starting mating and mutating offsprings")
+            population[:] = dpa.varAnd(
+                population=offspring,
+                toolbox=self.toolbox,
+                cxpb=crossover_prob,
+                mutpb=mutation_prob
+            )
+            self.logger.info(f"new population of {len(population)}")
 
 
-        final_pop, logbook = dpa.eaMuPlusLambda(
-            population=population,
-            toolbox=self.toolbox,
-            mu=popsize,
-            lambda_=popsize,
-            cxpb=crossover_prob,
-            mutpb=mutation_prob,
-            ngen=max_gens,
-            verbose=True
-        )
+            # collect fitnessValues into a list, update statistics and print:
+            self.logger.info("calculating population fitness values")
+            fitness_values = self._calculate_fitness_values(population)
+
+            max_fitness = max(fitness_values)
+            mean_fitness = sum(fitness_values) / len(population)
+            max_fitness_values.append(max_fitness)
+            mean_fitness_values.append(mean_fitness)
+            self.logger.info(f"- Generation {current_gen}: Max Fitness = {max_fitness}, Avg Fitness = {mean_fitness}")
+
+            # find and print best individual:
+            best_index = fitness_values.index(max(fitness_values))
+            self.logger.info(f"Best Individual = {population[best_index]}")
 
         # return the top best individuals created
-        return sorted(final_pop, key=lambda ind: max(ind.fitness.values), reverse=True)[:3]
+        return sorted(population, key=lambda ind: max(ind.fitness.values), reverse=True)[:3]
 
 
 

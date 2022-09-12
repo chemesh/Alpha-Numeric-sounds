@@ -19,7 +19,8 @@ class Song(object):
     def _get_bkps(self):
         max_bkps = su.get_max_bkps(self.tempo, librosa.get_duration(self._data, self.sr))
         print(f"max bkps: {max_bkps}")
-        self._segments_time_bkps = su.partition(self._data, self.sr, max_bkps)
+        self._segments_time_bkps = su.partition(self._data, self.sr, max_bkps, in_ms=True)
+        print(f"segments timestamps: {self._segments_time_bkps}")
 
     def to_librosa_model(self):
         pass
@@ -102,7 +103,13 @@ class SongPool(object):
     def generate(self):
         if len(self._pool) < 2:
             raise EmptyPoolException
-        return su.rand_reconstruct(self._pool[0].data, self._pool[0].sr, self._pool[1].data, self._pool[0].sr)
+        return su.rand_reconstruct(self._pool[0].data, self._pool[0].sr,
+                                   self._pool[1].data, self._pool[0].sr,
+                                   bkps1=self._pool[0].segments_time_bkps,
+                                   bkps2=self._pool[1].segments_time_bkps)[0]
+
+    def get(self, index):
+        return self._pool[index].data
 
 
 class EmptyPoolException(Exception):
