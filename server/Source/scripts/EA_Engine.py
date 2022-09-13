@@ -14,7 +14,6 @@ import server.Source.utils.Raters as raters
 from server.Source.utils.SoundUtils import INSTRUMENT as inst
 
 
-
 class EA_Engine(object):
 
     class _Fitness(object):
@@ -32,9 +31,8 @@ class EA_Engine(object):
 
         @staticmethod
         def _sr1(individual: Song):
-            max_bkps = su.get_max_bkps(individual.tempo, individual.duration)
-            _, bkps = su.break_to_timed_segments(individual.data, max_bkps,
-                                                 return_indi_segments=False, return_bkps_as_frames=True)
+            bkps = individual.segments_frame_bkps
+            bkps.insert(0, 0)
             sum_rates = num_rates = 0
             for bkp, next_bkp in zip(bkps[:-1], bkps[1:]):
                 tempo, beat_track = librosa.beat.beat_track(individual.data[bkp:next_bkp], individual.sr)
@@ -47,13 +45,10 @@ class EA_Engine(object):
                 num_rates += 2
             return sum_rates / num_rates
 
-
         @staticmethod
         def _sr2(individual):
-            # get timed segments
-            max_bkps = su.get_max_bkps(individual.tempo, individual.duration)
-            _, bkps = su.break_to_timed_segments(individual.data, max_bkps,
-                                                 return_indi_segments=False, return_bkps_as_frames=True)
+            bkps = individual.segments_frame_bkps
+            bkps.insert(0, 0)
             # split each to layers
             sum_rates = num_rates = 0
             for bkp, next_bkp in zip(bkps[:-1], bkps[1:]):
@@ -70,6 +65,13 @@ class EA_Engine(object):
         @staticmethod
         def _sr3(individual: Song):
             return raters.sub_rater_verify_parts_length(individual.segments_time_bkps)
+            
+        @staticmethod
+        def _sr4(individual):
+            beat_track_frames = individual.beat_frames
+            notes, _ = su.extract_notes(individual.data, beat_track_frames, individual.sr)
+            return raters.sub_rater_quiet_notes(notes)
+
 
     def __init__(self, logger: Logger):
         self.toolbox = base.Toolbox()
@@ -150,7 +152,7 @@ class EA_Engine(object):
         su.adjust_bpm(songs[0], songs[1])
         su.adjust_pitch(songs[0], songs[1])
         self.song_pool.add(*songs)
-        
+
         # create initial population (generation 0):
         self.logger.info("creating population")
         population = self._population_creator(popsize=popsize)

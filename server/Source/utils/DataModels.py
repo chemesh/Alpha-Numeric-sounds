@@ -10,6 +10,7 @@ class Song(object):
         self.sr = sr
         self._tempo = None
         self._beat_frames = None
+        self._beat_times = None
         self._segments_time_bkps = None
         self._key = None
         self._duration = librosa.get_duration(data)
@@ -18,17 +19,18 @@ class Song(object):
         self._tempo, self._beat_frames = librosa.beat.beat_track(y=self._data, sr=self.sr)
 
     def _get_bkps(self):
-        max_bkps = su.get_max_bkps(self.tempo, librosa.get_duration(self._data, self.sr))
-        print(f"max bkps: {max_bkps}")
-        self._segments_time_bkps = su.partition(self._data, self.sr, max_bkps, in_ms=True)
-        print(f"segments timestamps: {self._segments_time_bkps}")
-
+        max_bkps = su.get_max_bkps(self.tempo, self.duration)
+        _, self._segments_time_bkps = su.break_to_timed_segments(self._data, self.sr, max_bkps,
+                                                                 return_indi_segments=False)
 
     def to_librosa_model(self):
         pass
 
     def to_paa_model(self):
         pass
+
+    def _get_beat_times(self):
+        self._beat_times = librosa.frames_to_time(self.beat_frames, sr=self.sr)
 
     def _get_key(self):
         self._key = su.extract_key(self._data, self.sr)
@@ -56,13 +58,21 @@ class Song(object):
 
     @property
     def beat_times(self):
-        return librosa.frames_to_time(self.beat_frames, sr=self.sr)
+        if self._beat_times is None:
+            self._get_beat_times()
+        return self._beat_times
 
     @property
     def segments_time_bkps(self):
         if self._segments_time_bkps is None:
             self._get_bkps()
         return self._segments_time_bkps
+
+    @property
+    def segments_frame_bkps(self):
+        if self._segments_time_bkps is None:
+            self._get_bkps()
+        return [su.ms_to_frame(bkp, self.sr) for bkp in self.segments_time_bkps]
 
     @property
     def key(self) -> str:
