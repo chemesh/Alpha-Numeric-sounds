@@ -9,7 +9,7 @@ from deap import base, creator, tools
 import server.Source.utils.SoundUtils as su
 from server.Source.utils.DataModels import SongPool, Song
 from server.Source.utils.Logger import Logger
-from server.Source.utils.Constants import POPULATION_SIZE, TOURNSIZE_PERCENT, CROSSOVER_PROBABILITY, MUTATION_PROBABILITY, SAMPLERATE
+from server.Source.utils.Constants import SAMPLERATE
 import server.Source.utils.Raters as raters
 from server.Source.utils.SoundUtils import INSTRUMENT as inst
 
@@ -63,10 +63,15 @@ class EA_Engine(object):
             return sum_rates / num_rates
 
         @staticmethod
+        def _sr3(individual: Song):
+            return raters.sub_rater_verify_parts_length(individual.segments_time_bkps)
+            
+        @staticmethod
         def _sr4(individual):
             beat_track_frames = individual.beat_frames
             notes, _ = su.extract_notes(individual.data, beat_track_frames, individual.sr)
             return raters.sub_rater_quiet_notes(notes)
+
 
     def __init__(self, logger: Logger):
         self.toolbox = base.Toolbox()
@@ -76,8 +81,6 @@ class EA_Engine(object):
         creator.create("Fitness_test", base.Fitness, weights=(1.0,))
         # creator.create("Individual", object, sr=int, raw_data=np.ndarray, fitness=Fitness)
         creator.create("Individual", Song, fitness=creator.Fitness_test)
-        # self.toolbox.register("individual_creator", self._individual_creator)
-        # self.toolbox.register("population_creator", self._myInitRepeat, list, self.toolbox.individual_creator)
         self.toolbox.register("select", tools.selBest)
         self.toolbox.register("evaluate", self._Fitness.rate)
         self.toolbox.register("mutate", self._mutate)
@@ -98,16 +101,32 @@ class EA_Engine(object):
         return creator.Individual(data=s, sr=SAMPLERATE)
 
     @classmethod
-    def _mutate(cls, individual):
+    def _mutate(cls, individual: Song):
         inst = random.choice(su.INSTRUMENT.list() + [None])
-        s, _ = su.rand_reconstruct(individual.data, individual.sr, individual.data, individual.sr, inst=inst)
+        s, _ = su.rand_reconstruct(
+            data1=individual.data,
+            sr1=individual.sr,
+            data2=individual.data,
+            sr2=individual.sr,
+            inst=inst,
+            bkps1=individual.segments_time_bkps,
+            bkps2=individual.segments_time_bkps
+        )
         return creator.Individual(data=s, sr=SAMPLERATE),
 
 
     @classmethod
     def _crossover(cls, ind1, ind2):
         inst = random.choice(su.INSTRUMENT.list() + [None])
-        s1, s2 = su.rand_reconstruct(ind1.data, ind1.sr, ind2.data, ind2.sr, inst=inst)
+        s1, s2 = su.rand_reconstruct(
+            data1=ind1.data,
+            sr1=ind1.sr,
+            data2=ind2.data,
+            sr2=ind2.sr,
+            inst=inst,
+            bkps1=ind1.segments_time_bkps,
+            bkps2=ind2.segments_time_bkps
+        )
         return creator.Individual(data=s1, sr=SAMPLERATE), creator.Individual(data=s2, sr=SAMPLERATE)
 
     def _calculate_fitness_values(self, population):

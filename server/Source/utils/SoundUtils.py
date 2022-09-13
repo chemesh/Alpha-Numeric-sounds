@@ -11,13 +11,13 @@ import math
 from typing import List, Tuple, Any
 from mingus.containers import Note
 from mingus.core import intervals, keys
-from spleeter.separator import Separator
+# from spleeter.separator import Separator
 
 from server.Source.utils.Logger import Logger as log
 from server.Source.utils.Constants import MAX_BKPS, INPUT_FOLDER
+from server.Source.utils.SingletonSeperator import get_seperator
 from server.Source.utils.keydin import pitchdistribution as pd, classifiers
 # import server.Source.utils.DataModels as data_model
-
 
 
 class INSTRUMENT(enum.Enum):
@@ -60,7 +60,7 @@ def adjust_bpm(song1, song2):
     return
 
 
-def adjust_pitch(song1: data_model.Song, song2: data_model.Song):
+def adjust_pitch(song1, song2):
     if song1.key == song2.key:
         return
     maj = 'maj'
@@ -87,9 +87,9 @@ def adjust_pitch(song1: data_model.Song, song2: data_model.Song):
             smaller = 'first'
 
     if smaller == 'first':
-        song1.data = librosa.effects.pitch_shift(song1.data, delta)
+        song1.data = librosa.effects.pitch_shift(song1.data, song1.sr, delta)
     else:
-        song2.data = librosa.effects.pitch_shift(song2.data, delta)
+        song2.data = librosa.effects.pitch_shift(song2.data, song2.sr, delta)
 
 
 def find_equivalent_key_chord(key: str, chord: SCALE_TYPE) -> (str, str):
@@ -102,11 +102,13 @@ def find_equivalent_key_chord(key: str, chord: SCALE_TYPE) -> (str, str):
         raise Exception(f'{key} given as parameter is not an accepted key')
 
     if chord == SCALE_TYPE.major:
-        rel_key = keys.relative_minor(key)
+        rel_key = keys.relative_minor(key.upper())
         rel_scale_type = SCALE_TYPE.minor
     else:
-        rel_key = keys.relative_major(key)
+        rel_key = keys.relative_major(key.lower())
         rel_scale_type = SCALE_TYPE.major
+
+    rel_key = rel_key[0].upper() + rel_key[1] if len(rel_key) > 1 else rel_key.upper()
     return rel_key, rel_scale_type
 
 
@@ -319,7 +321,8 @@ def separate_voices(data: np.ndarray, as_mono=True, sep="spleeter:5stems"):
         return mono.reshape(data.shape[0])
 
     data = data.reshape(data.shape[0], 1)
-    voices = Separator(sep).separate(data)
+    # voices = Separator(sep, multiprocess=False).separate(data)
+    voices = get_seperator(sep).separate(data)
     processed_voices = {n: to_mono(v) for n, v in voices.items()} if as_mono else voices
     return processed_voices
 
