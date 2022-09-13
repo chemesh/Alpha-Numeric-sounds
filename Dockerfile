@@ -1,15 +1,25 @@
-FROM python:3.9.13-alpine3.16
+FROM python:3.9.13
 WORKDIR /opt/AlphaNumericSounds
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-COPY AlphaNumericSounds /server
-COPY app /server
-COPY Source /server
-COPY manage.py /
-COPY requirements.txt /
+RUN sudo apt install nodejs
+RUN sudo apt install npm
+RUN npm install --global yarn
+RUN npm install react-scripts
+RUN npm install -g serve
 
-RUN apk add --no-cache --update \
-    python3 python3-dev gcc \
-    gfortran musl-dev
-RUN pip install --upgrade pip
-RUN pip install -r /requirements.txt
-CMD ["python", "./manage.py", "runserver", "8080"]
+RUN apt-get -y update
+RUN apt-get -y upgrade
+RUN apt-get install -y ffmpeg
+
+COPY server ./server
+COPY ui/public ./ui/public
+COPY ui/src ./ui/src
+COPY ui/package.json ./ui/package.json
+COPY dependencies ./dependencies
+COPY requirements.txt .
+COPY startup.sh .
+
+RUN python -m venv venv-ans
+CMD ["./startup.sh"]
