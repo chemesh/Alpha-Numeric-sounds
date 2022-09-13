@@ -15,7 +15,6 @@ controller = Controller()
 
 
 def index(request):
-    # TODO: here we need to return the UI main page
     return HttpResponse("Hello, world. You're at the Alpha Numeric Sounds index.")
 
 

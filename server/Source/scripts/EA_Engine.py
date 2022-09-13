@@ -2,16 +2,15 @@ import math
 import random
 from copy import deepcopy
 
+import Source.utils.Raters as raters
+import Source.utils.SoundUtils as su
 import deap.algorithms as dpa
 import librosa.beat
+from Source.utils.Constants import SAMPLERATE
+from Source.utils.DataModels import SongPool, Song
+from Source.utils.Logger import Logger
+from Source.utils.SoundUtils import INSTRUMENT as inst
 from deap import base, creator, tools
-
-import server.Source.utils.SoundUtils as su
-from server.Source.utils.DataModels import SongPool, Song
-from server.Source.utils.Logger import Logger
-from server.Source.utils.Constants import SAMPLERATE
-import server.Source.utils.Raters as raters
-from server.Source.utils.SoundUtils import INSTRUMENT as inst
 
 
 class EA_Engine(object):
