@@ -425,7 +425,6 @@ def calc_win_length_by_beat_track(bit_track: np.ndarray):
             sum_spaces += bit_track[math.floor(((i-1) * beat_track_len / 3)) + 1] - \
                           bit_track[math.floor((i-1) * beat_track_len / 3)]
             num_spaces += 1
-    print(f'beat track in calc_win_length: {bit_track}, num spaces: {num_spaces}')
     return math.floor(sum_spaces/num_spaces) if num_spaces > 0 else 0
 
 
