@@ -408,12 +408,14 @@ def to_mingus_form(note: str):
 
 def calc_win_length_by_beat_track(bit_track: np.ndarray):
     bit_track = librosa.frames_to_samples(bit_track)
-    beat_track_len = bit_track.shape[0]
-    first_space = bit_track[2] - bit_track[1]
-    mid_space = bit_track[round((beat_track_len/3)+1)] - \
-                bit_track[round(beat_track_len/3)]
-    last_space = bit_track[round((2*beat_track_len/3)+1)] - \
-                 bit_track[round(2*beat_track_len/3)]
+    if len(bit_track) <= 2:
+        return bit_track[1] - bit_track[0]
+    beat_track_len = len(bit_track)
+    first_space = bit_track[1] - bit_track[0]
+    mid_space = bit_track[math.floor(beat_track_len/3)+1] - \
+                bit_track[math.floor(beat_track_len/3)]
+    last_space = bit_track[math.floor((2*beat_track_len/3))+1] - \
+                 bit_track[math.floor(2*beat_track_len/3)]
     return round((first_space + mid_space + last_space)/3)
 
 
@@ -430,12 +432,13 @@ def extract_notes(data: np.ndarray, corresponding_beat_drops: np.ndarray, sr: in
     win_length = calc_win_length_by_beat_track(corresponding_beat_drops)
     logger.info(f'calculated win_length of {win_length}')
     corr_frequencies = librosa.fft_frequencies(sr=sr, n_fft=win_length)
-    freq_domain = librosa.stft(data, n_fft=win_length, hop_length=round(win_length))
+    freq_domain = librosa.stft(data, n_fft=win_length, hop_length=win_length, win_length=win_length)
     freqs_list = np.empty([freq_domain.shape[0]], dtype=np.ndarray)
     notes_list = np.empty([freq_domain.shape[0]], dtype=np.ndarray)
     j = 0
     try:
         for beat_frame_freqs in freq_domain:
+            beat_frame_freqs = abs(beat_frame_freqs)
             i = 0
             idx_keeper = 0
             min_freq = 4 * (np.max(beat_frame_freqs)) / 5

@@ -29,9 +29,8 @@ class EA_Engine(object):
 
         @staticmethod
         def _sr1(individual: Song):
-            max_bkps = su.get_max_bkps(individual.tempo, individual.duration)
-            _, bkps = su.break_to_timed_segments(individual.data, individual.sr, max_bkps,
-                                                 return_indi_segments=False, return_bkps_as_frames=True)
+            bkps = individual.segments_frame_bkps
+            bkps.insert(0, 0)
             sum_rates = num_rates = 0
             for bkp, next_bkp in zip(bkps[:-1], bkps[1:]):
                 tempo, beat_track = librosa.beat.beat_track(individual.data[bkp:next_bkp], individual.sr)
@@ -46,10 +45,8 @@ class EA_Engine(object):
 
         @staticmethod
         def _sr2(individual):
-            # get timed segments
-            max_bkps = su.get_max_bkps(individual.tempo, individual.duration)
-            _, bkps = su.break_to_timed_segments(individual.data, individual.sr, max_bkps,
-                                                 return_indi_segments=False, return_bkps_as_frames=True)
+            bkps = individual.segments_frame_bkps
+            bkps.insert(0, 0)
             # split each to layers
             sum_rates = num_rates = 0
             for bkp, next_bkp in zip(bkps[:-1], bkps[1:]):
@@ -62,6 +59,12 @@ class EA_Engine(object):
                 num_rates += 1
             # rate vocals by notes in key
             return sum_rates / num_rates
+
+        @staticmethod
+        def _sr3(individual):
+            beat_track_frames = individual.beat_frames
+            notes, _ = su.extract_notes(individual.data, beat_track_frames, individual.sr)
+            return raters.sub_rater_quiet_notes(notes)
 
     def __init__(self, logger: Logger):
         self.toolbox = base.Toolbox()
