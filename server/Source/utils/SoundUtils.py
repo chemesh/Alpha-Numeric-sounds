@@ -417,16 +417,15 @@ def to_mingus_form(note: str):
 
 
 def calc_win_length_by_beat_track(bit_track: np.ndarray):
+    sum_spaces = num_spaces = 0
     bit_track = librosa.frames_to_samples(bit_track)
-    if len(bit_track) <= 2:
-        return bit_track[1] - bit_track[0]
     beat_track_len = len(bit_track)
-    first_space = bit_track[1] - bit_track[0]
-    mid_space = bit_track[math.floor(beat_track_len/3)+1] - \
-                bit_track[math.floor(beat_track_len/3)]
-    last_space = bit_track[math.floor((2*beat_track_len/3))+1] - \
-                 bit_track[math.floor(2*beat_track_len/3)]
-    return round((first_space + mid_space + last_space)/3)
+    for i in [3, 2, 1]:
+        if beat_track_len > i:
+            sum_spaces += bit_track[math.floor(((i-1) * beat_track_len / 3)) + 1] - \
+                          bit_track[math.floor((i-1) * beat_track_len / 3)]
+            num_spaces += 1
+    return math.floor(sum_spaces/num_spaces) if num_spaces > 0 else 0
 
 
 def to_librosa_key(key:str):
