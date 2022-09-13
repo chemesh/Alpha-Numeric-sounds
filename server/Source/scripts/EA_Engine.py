@@ -36,6 +36,8 @@ class EA_Engine(object):
             sum_rates = num_rates = 0
             for bkp, next_bkp in zip(bkps[:-1], bkps[1:]):
                 tempo, beat_track = librosa.beat.beat_track(individual.data[bkp:next_bkp], individual.sr)
+                if beat_track.shape[0] <= 1:
+                    continue
                 layers = su.separate_voices(individual.data[bkp:next_bkp])
                 vocal_notes, _ = su.extract_notes(layers[inst.VOCALS.value], beat_track)
                 rate_vocal_crazy = raters.sub_rater_neighboring_pitch(vocal_notes)
@@ -53,6 +55,8 @@ class EA_Engine(object):
             sum_rates = num_rates = 0
             for bkp, next_bkp in zip(bkps[:-1], bkps[1:]):
                 tempo, beat_track = librosa.beat.beat_track(individual.data[bkp:next_bkp], individual.sr)
+                if beat_track.shape[0] <= 1:
+                    continue
                 # rate piano and vocals (for each seg) with neigh_pitch
                 layers = su.separate_voices(individual.data[bkp:next_bkp], sep="spleeter:2stems")
                 vocal_notes, _ = su.extract_notes(layers[inst.VOCALS.value], beat_track)
@@ -203,7 +207,7 @@ class EA_Engine(object):
 
 
         # return the top best individuals created
-        return sorted(population, key=lambda ind: max(ind.fitness.values), reverse=True)[:3]
+        return sorted(population, key=lambda ind: max(ind.fitness.values), reverse=True)[0]
 
 
 
