@@ -9,7 +9,7 @@ from deap import base, creator, tools
 import server.Source.utils.SoundUtils as su
 from server.Source.utils.DataModels import SongPool, Song
 from server.Source.utils.Logger import Logger
-from server.Source.utils.Constants import POPULATION_SIZE, TOURNSIZE_PERCENT, CROSSOVER_PROBABILITY, MUTATION_PROBABILITY, SAMPLERATE
+from server.Source.utils.Constants import SAMPLERATE
 import server.Source.utils.Raters as raters
 from server.Source.utils.SoundUtils import INSTRUMENT as inst
 
@@ -70,7 +70,6 @@ class EA_Engine(object):
         @staticmethod
         def _sr3(individual: Song):
             return raters.sub_rater_verify_parts_length(individual.segments_time_bkps)
-
 
     def __init__(self, logger: Logger):
         self.toolbox = base.Toolbox()
