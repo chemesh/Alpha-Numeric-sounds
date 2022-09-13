@@ -54,12 +54,13 @@ class Controller:
                              f"and {execution_model.song_2}")
 
             # Backend logic
-            songs = [Song.from_wav_file(path) for path in songs_paths]
+            songs = [Song.from_wav_file(path, duration=30) for path in songs_paths]
+            self.logger.info(f"params from ui: {params}")
             ea_params = self.parser.parse_ea_params(params)
-
+            self.logger.info(f"params from ui: {ea_params.json()}")
             results = self.engine.mix(*songs, **ea_params.json())
             file_path = os.path.join(OUTPUT_FOLDER, f"result_{execution_model.identifier}")
-            sf.write(f"{file_path}.wav", results[0].data, results[0].sr)
+            sf.write(f"{file_path}.wav", results.data, results.sr)
 
             # for testing only
             file_path = songs_paths[0]
@@ -76,7 +77,6 @@ class Controller:
             self.logger.error(traceback.format_exc())
 
         finally:
-            self.process_list.pop(exec_id)
             exit(0)
 
 
