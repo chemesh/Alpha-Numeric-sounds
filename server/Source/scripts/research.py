@@ -1,22 +1,44 @@
-import os
 
-import server.Source.utils.Constants as consts
-import librosa
-import librosa.display
-import soundfile as sf
-# from spleeter.separator import Separator
-#
-# from Source.utils.Constants import WAV_FILE_TEST, INPUT_FOLDER
+# import server.Source.utils.Constants as consts
+# import librosa
+# import librosa.display
+# import soundfile as sf
+# # from spleeter.separator import Separator
+# #
+# # from Source.utils.Constants import WAV_FILE_TEST, INPUT_FOLDER
 # from EA_Engine import EA_Engine
-import server.Source.utils.SoundUtils as su
-from server.Source.utils.SoundUtils import INSTRUMENT
-import server.Source.utils.Logger as logger
-import server.Source.utils.Raters as rate
+# import server.Source.utils.SoundUtils as su
+
+from server.Source.utils.DataModels import Song
+# from app.integrations.youtube_manager import YTManager
+from server.Source.utils.Raters import sub_rater_verify_parts_length
+
+
+LEVAD_BAMIDBAR = "C:\\Users\\roi.shemesh\\PycharmProjects\\Alpha-Numeric-sounds\\server\\resources\\לבד במדבר  -  גיא מזיג.wav"
+SMOOTH = "C:\\Users\\roi.shemesh\\PycharmProjects\\Alpha-Numeric-sounds\\server\\resources\\Santana - Smooth ft. Rob Thomas (Official Video).wav"
 
 
 def main():
-    # logger = Logger()
+
+    guy_mezig = Song.from_wav_file(LEVAD_BAMIDBAR)
+    # santana = Song.from_wav_file(SMOOTH)
+    print(f"santana bkps: {guy_mezig.segments_time_bkps}")
+    # bkps = [62310.89381928583,53891.03382913407,43295.85459289886,33121.05721054307,26612.108632268006,16436.902588127294,13257.197343100666,10985.7665592448,9912.59527253611,9417.75031291199,9134.765719466373,8893.706686450334,8655.934685390048,8497.250757713968,8324.65803206701,8145.590992465207,7986.9070647891285]
+    res = sub_rater_verify_parts_length(guy_mezig.segments_time_bkps)
+    print(f"guy mezig's score: {res}")
+
+
+
+    # urls = ['https://www.youtube.com/watch?v=CxKWTzr-k6s']
+    # yt_manager = YTManager()
+    # songs_paths = yt_manager.download(urls)
+    # print(songs_paths)
+    # # logger = Logger()
     # engine = EA_Engine()
+    # s1 = s2 = Song(*songs_paths)
+    # res = engine.mix(s1, s2)
+    # print(res)
+
     # sep = Separator("spleeter:5stems")
 
     # data, samplerate = librosa.load(librosa.ex('trumpet'))

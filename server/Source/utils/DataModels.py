@@ -120,7 +120,13 @@ class SongPool(object):
     def generate(self):
         if len(self._pool) < 2:
             raise EmptyPoolException
-        return su.rand_reconstruct(self._pool[0].data, self._pool[0].sr, self._pool[1].data, self._pool[0].sr)
+        return su.rand_reconstruct(self._pool[0].data, self._pool[0].sr,
+                                   self._pool[1].data, self._pool[0].sr,
+                                   bkps1=self._pool[0].segments_time_bkps,
+                                   bkps2=self._pool[1].segments_time_bkps)[0]
+
+    def get(self, index):
+        return self._pool[index].data
 
 
 class EmptyPoolException(Exception):

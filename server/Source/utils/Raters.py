@@ -1,5 +1,5 @@
+from typing import List
 import math
-
 import librosa
 import numpy as np
 from mingus.containers import Note
@@ -13,6 +13,7 @@ def sub_rater_neighboring_pitch(notes: np.ndarray, need_mingus_conversion:bool =
     Calculates rating according to number of crazy notes
     Only relevant for list of notes, or list of lists with one note each.
     """
+    logger.info(f'NOTES in rater pitch: {notes}')
     notes = [x[0] for x in notes if x is not None]
     mingus_notes = list(map(su.to_mingus_form, notes)) if need_mingus_conversion else notes
     count_crazy_notes = 0
@@ -45,3 +46,19 @@ def sub_rater_notes_in_key(notes: np.ndarray, key):
 
 def sub_rater_quiet_notes(notes: np.ndarray):
     return sum(1 for note in notes if not None)/len(notes)
+
+
+def sub_rater_verify_parts_length(bkps_list: List):
+    """
+    This sub rater compares and verifies that the lengths of the essential parts of the song,
+    have similar lengths in order of magnitude
+    """
+
+    # calculate the duration for each part
+    parts_duration = [bkps_list[i] - bkps_list[i-1] for i in range(1, len(bkps_list))]
+    avg_duration = sum(parts_duration) / len(bkps_list)
+
+    # here d is the sum of 'distances' of all the parts durations from the average duration
+    d = sum([abs(avg_duration - part_duration) % avg_duration for part_duration in parts_duration])
+
+    return 1 - d / (len(bkps_list) * avg_duration)
