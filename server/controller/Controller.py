@@ -10,6 +10,9 @@ from server.Source.utils.DataModels import Song
 from server.app.integrations.youtube_manager import YTManager
 from server.app.app_utils import STATUS
 import django
+
+from server.controller.UIParser import UIParser
+
 django.setup()
 from server.app.models import Execution
 
@@ -17,10 +20,10 @@ from server.app.models import Execution
 class Controller:
     logger = Logger()
     engine = EA_Engine(logger)
+    parser = UIParser()
     process_list = {}
 
     def start_exec(self, urls, params, exec_id):
-
         try:
             self.logger.info(f"creating process with execution {exec_id}")
             self.process_list[exec_id] = multiprocessing.Process(target=self._run, args=(urls, params, exec_id))
@@ -51,13 +54,13 @@ class Controller:
                              f"audio data saved in {execution_model.song_1}"
                              f"and {execution_model.song_2}")
 
-            # TODO: DONT FORGET TO CONVERT EA params FROM INT (0-100) TO FLOAT(0-1)
             # Backend logic
-            # songs = [Song.from_wav_file(path) for path in songs_paths]
-            ## verify params extraction from UI
-            # results = self.engine.mix(*songs, **params)
-            # file_path = os.path.join(OUTPUT_FOLDER, f"result_{execution_model.identifier}")
-            # sf.write(f"{file_path}.wav", results[0].data, results[0].sr)
+            songs = [Song.from_wav_file(path) for path in songs_paths]
+            ea_params = self.parser.parse_ea_params(params)
+
+            results = self.engine.mix(*songs, **ea_params.json())
+            file_path = os.path.join(OUTPUT_FOLDER, f"result_{execution_model.identifier}")
+            sf.write(f"{file_path}.wav", results[0].data, results[0].sr)
 
             # for testing only
             file_path = songs_paths[0]
@@ -72,6 +75,11 @@ class Controller:
             execution_model.save()
             self.logger.error(e)
             self.logger.error(traceback.format_exc())
+
+        finally:
+            self.process_list.pop(exec_id)
+            exit(0)
+
 
 
 class ExecutionError(Exception):
