@@ -3,8 +3,8 @@
 Classifiers for guessing key of pitch distribution.
 """
 
-from server.Source.utils.keydin import pitchdistribution as pd
 import numpy as np
+from Source.utils.keydin import pitchdistribution as pd
 
 
 class Classifier(object):

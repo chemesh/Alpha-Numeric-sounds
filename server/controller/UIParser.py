@@ -1,6 +1,6 @@
 import json
 
-from server.controller.UIDataModels import EA_Parameters
+from controller.UIDataModels import EA_Parameters
 
 
 class UIParser:

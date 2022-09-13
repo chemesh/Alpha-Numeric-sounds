@@ -1,20 +1,19 @@
-import os.path
 import multiprocessing
+import os.path
 import traceback
-import soundfile as sf
 
-from server.Source.utils.Logger import Logger
-from server.Source.utils.Constants import OUTPUT_FOLDER
-from server.Source.scripts.EA_Engine import EA_Engine
-from server.Source.utils.DataModels import Song
-from server.app.integrations.youtube_manager import YTManager
-from server.app.app_utils import STATUS
 import django
-
-from server.controller.UIParser import UIParser
+import soundfile as sf
+from Source.scripts.EA_Engine import EA_Engine
+from Source.utils.Constants import OUTPUT_FOLDER
+from Source.utils.DataModels import Song
+from Source.utils.Logger import Logger
+from app.app_utils import STATUS
+from app.integrations.youtube_manager import YTManager
+from controller.UIParser import UIParser
 
 django.setup()
-from server.app.models import Execution
+from app.models import Execution
 
 
 class Controller:

@@ -1,23 +1,21 @@
 import enum
-import re
-import numpy as np
+import math
 import random
+import re
+from typing import List, Tuple, Any
+
 import librosa
 import librosa.display
-import ruptures as rpt
 import matplotlib.pyplot as plt
-import math
-
-from typing import List, Tuple, Any
+import numpy as np
+import ruptures as rpt
+from Source.utils.Constants import MAX_BKPS
+from Source.utils.Logger import Logger as log
+from Source.utils.SingletonSeperator import get_seperator
+from Source.utils.keydin import pitchdistribution as pd, classifiers
 from mingus.containers import Note
 from mingus.core import intervals, keys
-# from spleeter.separator import Separator
 
-from server.Source.utils.Logger import Logger as log
-from server.Source.utils.Constants import MAX_BKPS, INPUT_FOLDER
-from server.Source.utils.SingletonSeperator import get_seperator
-from server.Source.utils.keydin import pitchdistribution as pd, classifiers
-# import server.Source.utils.DataModels as data_model
 
 
 class INSTRUMENT(enum.Enum):
@@ -289,7 +287,6 @@ def get_sum_of_cost(algo: rpt.KernelCPD, n_bkps: int) -> float:
 
 def optimal_bkps(bkps_costs: List) -> int:
 
-    # TODO: MAKE SURE DOING LIBROSA.TRIM() DOESN'T FUCKS UP THE BKPS CALC (EVEN THO IT'S BETTER TO DO THE TRIM.... SHIR....)
     max_pos = 1
     max_curve = None
 
@@ -356,16 +353,14 @@ def partition(data: np.ndarray, samplerate: int, n_bkps_max: int, hop_length: in
     # Choose the number of changes (elbow heuristic)
     # Start by computing the segmentation with most changes.
     # After start, all segmentations with 1, 2,..., K_max-1 changes are also available for free.
-    logger.info("START: algo predict 1")
     _ = algo.predict(n_bkps_max)
-    logger.info("DONE: algo predict 1")
 
     array_of_n_bkps = np.arange(1, n_bkps_max + 1)
     bkps_costs = [get_sum_of_cost(algo=algo, n_bkps=n_bkps) for n_bkps in array_of_n_bkps]
-    print(f'sum of cost array y values: {bkps_costs}')
+    # print(f'sum of cost array y values: {bkps_costs}')
 
     n_bkps = optimal_bkps(bkps_costs)
-    print(f"n_bkps: {n_bkps}")
+    # print(f"n_bkps: {n_bkps}")
 
     # Segmentation
     bkps = algo.predict(n_bkps=n_bkps)
@@ -385,7 +380,7 @@ def get_max_bkps(tempo, duration_in_secs):
 def break_to_timed_segments(data: np.ndarray, sr: int, n_bkps_max: int = 10,
                             return_indi_segments: bool = True, return_bkps_as_frames: bool = False) -> (np.ndarray, np.ndarray):
     bkps = partition(data, sr, n_bkps_max, in_ms=True)
-    print(f'BKPS before convert: {bkps}')
+    # print(f'BKPS before convert: {bkps}')
     rocks = None
     if return_indi_segments:
         i = 0
@@ -395,7 +390,7 @@ def break_to_timed_segments(data: np.ndarray, sr: int, n_bkps_max: int = 10,
             rocks[i] = data[t1:t2]
             i += 1
     bkps = [ms_to_frame(bkp, sr) for bkp in bkps] if return_bkps_as_frames else bkps
-    print(f'BKPS after convert: {bkps}')
+    # print(f'BKPS after convert: {bkps}')
     return rocks, bkps
 
 
@@ -461,8 +456,9 @@ def extract_notes(data: np.ndarray, corresponding_beat_drops: np.ndarray, sr: in
             j += 1
     except Exception as e:
         logger.error(f'FELL ON (black days...): i = {i-1}, j = {j-1}, idx = {idx_keeper}, value = {corr_frequencies[idx_keeper]}\nError: {e.__str__()}')
-        exit(1)
-    logger.info(f'notes list shape: {notes_list.shape}, notes: {notes_list}')
+        logger.error(e.with_traceback(None))
+        raise e
+    # logger.info(f'notes list shape: {notes_list.shape}, notes: {notes_list}')
     return notes_list, win_length
     # get the chord according to the frequencies in each
 

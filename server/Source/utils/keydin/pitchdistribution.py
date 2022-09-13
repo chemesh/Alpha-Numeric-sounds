@@ -4,7 +4,7 @@ Class PitchDistribution represents proportion of musical sample made up of each 
 """
 
 import numpy as np
-from server.Source.utils.keydin.audioprocessing import get_chromagram
+from Source.utils.keydin.audioprocessing import get_chromagram
 
 NUM_NOTES = 12
 NOTES = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#']
